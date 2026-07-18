@@ -3,10 +3,15 @@ import { useState } from 'react';
 
 function Header() {
 
-  let [login, setLogin] = useState("")
-  
-  let [password, setPassword] = useState("")
+  const [login, setLogin] = useState("")
 
+  const [savedLogin, setSavedLogin] = useState<string | null>(
+    localStorage.getItem("login")
+  );
+
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  const [password, setPassword] = useState("")
   const [isVisible, setIsVisible] = useState(false);
 
   const openModel = () => {
@@ -28,57 +33,98 @@ function Header() {
     setRegisrt(false)
   }
 
+  function logCons() {
+    console.log(login);
+    localStorage.setItem("login", login);
+    setSavedLogin(login);
+    setIsLoggedIn(true);
+    closeModal();
+  }
+
+  function handleLogout() {
+    localStorage.removeItem("login");
+    setSavedLogin(null);
+    setIsLoggedIn(false);
+  }
+
+  function handleAuthClick() {
+    if (isLoggedIn) {
+      handleLogout();
+    } else {
+      openModel();
+    }
+  }
+
+
   return (
     <header className="header">
       <div className="container header-content">
         <div className="logo">🏊 БаняSPA</div>
-
-        <button onClick={openModel} className="login-btn">Войти</button>
-
+        <button onClick={handleAuthClick} className="login-btn">{isLoggedIn ? "Выйти" : "Войти"}</button>
+        {isLoggedIn && savedLogin && (
+          <h1>Привет, {savedLogin}!</h1>
+        )}
       </div>
-      {isVisible && (
 
-        <div className='modal_okno' onClick={closeModal}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+      <div>
+        {isVisible && (
+          <div className='modal_okno' onClick={closeModal}>
+            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+              <button className='buttCloseModal' onClick={closeModal}>Закрыть</button>
+              <input
+                type="text"
+                placeholder="Логин"
+                value={login}
+                onChange={(e) => setLogin(e.target.value)}
+              />
+              <input
+                type="password"
+                placeholder="Пароль"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+              <button onClick={() => {
+                openRegistr();
+                closeModal();
+              }}>Регистрация</button>
+              <button className='formButtLogin' onClick={() => {
+                logCons();
+              }}>Войти</button>
+            </div>
+          </div>
+        )}
+      </div>
 
-            <button onClick={closeModal}>close</button>
-
-            <input type="text"
+      {registr && (
+        <div className='modal_okno'>
+          <div className="modal-content">
+            <button className='buttCloseModal' onClick={closeRegistr}>Закрыть</button>
+            <input
+              type="text"
               placeholder="Логин"
               value={login}
               onChange={(e) => setLogin(e.target.value)}
             />
-
             <input
               type="password"
               placeholder="Пароль"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
-
-            <button onClick={openRegistr}>Регистрация</button>
-
-            <button className='formButtLogin'>Войти</button>
-
-            {registr &&
-              <div>
-
-                <button onClick={closeRegistr}>X</button>
-
-                <p>
-                  Helloy
-                </p>
-
-              </div>
-
-            }
+            <input
+              type="password"
+              placeholder="Номер телефона"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+            <button>Регистрация</button>
+            <button className='formButtLogin' onClick={() => {
+              openModel();
+              closeRegistr();
+            }}>Вход</button>
           </div>
         </div>
-
-      )
-
-
-      }
+      )}
     </header>
   );
 }
