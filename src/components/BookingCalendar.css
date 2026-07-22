@@ -1,0 +1,72 @@
+/* BookingCalendar.module.css */
+
+.container {
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.bookingInfo {
+  margin-bottom: 20px;
+  padding: 15px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+}
+
+.bookingInfo h3 {
+  margin-top: 0;
+  margin-bottom: 15px;
+}
+
+.bookingInfo p {
+  margin: 8px 0;
+}
+
+.hint {
+  color: #666;
+  font-size: 14px;
+  margin-top: 10px !important;
+}
+
+/* ✅ Стили для дней календаря */
+.dayInRange {
+  background-color: #e3f2fd !important;
+}
+
+.dayStart {
+  background-color: #1976d2 !important;
+  color: white !important;
+  border-radius: 50% 0 0 50% !important;
+}
+
+.dayEnd {
+  background-color: #1976d2 !important;
+  color: white !important;
+  border-radius: 0 50% 50% 0 !important;
+}
+
+.dayBooked {
+  color: #ccc !important;
+  cursor: not-allowed !important;
+  opacity: 0.5 !important;
+}
+
+.dayBooked:hover {
+  background-color: transparent !important;
+  color: #ccc !important;
+}
+
+.dayHover {
+  cursor: pointer;
+}
+
+.dayHover:hover {
+  background-color: #1565c0 !important;
+  color: white !important;
+}
+
+/* Стили для обычного дня (не в диапазоне) */
+.dayDefault {
+  background-color: transparent;
+  color: inherit;
+  border-radius: 50%;
+}

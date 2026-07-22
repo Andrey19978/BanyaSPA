@@ -78,3 +78,15 @@
   margin-left: 266px;
   margin-bottom: 20px;
 }
+
+.nav{
+  display: flex;      /* или display: inline-flex */
+  gap: 15px;          /* Расстояние между элементами */
+  padding: 10px;
+}
+
+.nav a{
+    padding: 8px 12px;
+    text-decoration: none;
+    color: #ddd;
+}

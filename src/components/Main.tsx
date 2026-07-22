@@ -1,6 +1,19 @@
 import './Main.css';
+import { useState } from 'react';
+import BookingCalendar from "./BookingCalendar.tsx"
 
 function Main() {
+
+  const [bookingModel, setbookingModel] = useState(false);
+
+  function openBookingModel() {
+    setbookingModel(true);
+  }
+
+  function closseBookingModel() {
+    setbookingModel(false);
+  }
+
   return (
     <main className="main">
       <div className="container">
@@ -33,20 +46,32 @@ function Main() {
             <div className="card">
               <h3>👥 До 20 человек</h3>
               <p>Просторный зал для большой компании, отличное место для праздников</p>
-              <button className="book-btn">Забронировать</button>
+              <button onClick={openBookingModel} className="book-btn">Забронировать</button>
             </div>
 
             <div className="card">
               <h3>🎉 От 25 человек</h3>
               <p>VIP зал для мероприятий, корпоративов и дней рождения</p>
-              <button className="book-btn">Забронировать</button>
+              <button onClick={openBookingModel} className="book-btn">Забронировать</button>
             </div>
 
             <div className="card">
               <h3>⏰ До 4 человек почасовая</h3>
               <p>Уютный зал для семьи или друзей, оплата за фактическое время</p>
-              <button className="book-btn">Забронировать</button>
+              <button onClick={openBookingModel} className="book-btn">Забронировать</button>
             </div>
+
+            {bookingModel && <div className='dookingModel'>
+              <div className='booking-content'>
+
+               <BookingCalendar />
+               
+                <button onClick={closseBookingModel}>Закрыть</button>
+              </div>
+            </div>
+
+            }
+
           </div>
         </section>
       </div>
