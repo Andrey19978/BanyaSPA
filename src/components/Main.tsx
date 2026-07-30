@@ -2,34 +2,44 @@ import './Main.css';
 import { useState } from 'react';
 import BookingCalendar from "./BookingCalendar.tsx"
 
-function Main() {
+function Main({ photos, cards, priceValue }) {
 
   const [bookingModel, setbookingModel] = useState(false);
+  const [selectedCard, setSelectedCard] = useState(null);
 
-  function openBookingModel() {
+  function openBookingModel(card) {
+    setSelectedCard(card);
     setbookingModel(true);
   }
 
-  function closseBookingModel() {
+  function closeBookingModel() {
     setbookingModel(false);
+    setSelectedCard(null);
+  }
+
+  function getCalendarPrice() {
+    if (!selectedCard) return priceValue;
+    return selectedCard.price;
   }
 
   return (
     <main className="main">
       <div className="container">
-        {/* Фото с прокруткой */}
         <section className="gallery-section">
           <h2 className="section-title">Фотогалерея</h2>
           <div className="gallery-scroll">
-            <div className="gallery-item">📸 Фото 1</div>
-            <div className="gallery-item">📸 Фото 2</div>
-            <div className="gallery-item">📸 Фото 3</div>
-            <div className="gallery-item">📸 Фото 4</div>
-            <div className="gallery-item">📸 Фото 5</div>
+            {photos.map(photo => (
+              <div key={photo.id} className="gallery-item">
+                <img
+                  src={photo.src}
+                  alt={photo.alt}
+                  style={{ width: '300px', height: '200px', objectFit: 'cover' }}
+                />
+              </div>
+            ))}
           </div>
         </section>
 
-        {/* Описание */}
         <section className="description-section">
           <h2 className="section-title">О нашем бассейне</h2>
           <p>
@@ -39,42 +49,36 @@ function Main() {
           </p>
         </section>
 
-        {/* Карточки услуг */}
         <section className="services-section">
           <h2 className="section-title">Наши услуги</h2>
           <div className="cards-grid">
-            <div className="card">
-              <h3>👥 До 20 человек</h3>
-              <p>Просторный зал для большой компании, отличное место для праздников</p>
-              <button onClick={openBookingModel} className="book-btn">Забронировать</button>
-            </div>
-
-            <div className="card">
-              <h3>🎉 От 25 человек</h3>
-              <p>VIP зал для мероприятий, корпоративов и дней рождения</p>
-              <button onClick={openBookingModel} className="book-btn">Забронировать</button>
-            </div>
-
-            <div className="card">
-              <h3>⏰ До 4 человек почасовая</h3>
-              <p>Уютный зал для семьи или друзей, оплата за фактическое время</p>
-              <button onClick={openBookingModel} className="book-btn">Забронировать</button>
-            </div>
-
-            {bookingModel && <div className='dookingModel'>
-              <div className='booking-content'>
-
-               <BookingCalendar />
-               
-                <button onClick={closseBookingModel}>Закрыть</button>
+            {cards.map(card => (
+              <div key={card.id} className="card">
+                <h3>{card.title}</h3>
+                <p>{card.description}</p>
+                <p style={{ fontWeight: 'bold', color: '#2c3e50' }}>
+                  {card.price}₽ {card.priceType === 'hour' ? `/час (мин. ${card.minHours}ч)` : '/сутки'}
+                </p>
+                <button onClick={function() { openBookingModel(card); }} className="book-btn">
+                  {card.buttonText}
+                </button>
               </div>
-            </div>
-
-            }
-
+            ))}
           </div>
         </section>
       </div>
+
+      {bookingModel && (
+        <div className='bookingModel'>
+          <div className='booking-content'>
+            <BookingCalendar 
+              priceValue={getCalendarPrice()} 
+              card={selectedCard}
+            />
+            <button onClick={closeBookingModel}>Закрыть</button>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
