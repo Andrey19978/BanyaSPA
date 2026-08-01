@@ -3,14 +3,28 @@ import { DateCalendar } from '@mui/x-date-pickers/DateCalendar';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { Dayjs } from 'dayjs';
-import dayjs from 'dayjs';
 import 'dayjs/locale/ru';
 import './BookingCalendar.css';
 
-export default function BookingCalendar({ priceValue, card }) {
+type Card = {
+  id: number;
+  title: string;
+  description: string;
+  price: number;
+  priceType: 'hour' | 'day';
+  minHours?: number;
+  buttonText?: string;
+};
+
+type BookingCalendarProps = {
+  priceValue: number;
+  card: Card | null;
+};
+
+export default function BookingCalendar({ priceValue, card }: BookingCalendarProps) {
   const PRICE_PER_DAY = priceValue;
   
-  const getDailyPrice = (date: Dayjs) => {
+  const getDailyPrice = (date: Dayjs): number => {
     const dayOfWeek = date.day();
     if (dayOfWeek === 0 || dayOfWeek === 6) {
       return 5000;
@@ -18,24 +32,22 @@ export default function BookingCalendar({ priceValue, card }) {
     return PRICE_PER_DAY;
   };
 
-  const BOOKED_DATES = ['2026-07-20', '2026-07-21', '2026-07-25'];
+  const BOOKED_DATES: string[] = ['2026-07-20', '2026-07-21', '2026-07-25'];
 
   const [startDate, setStartDate] = React.useState<Dayjs | null>(null);
   const [endDate, setEndDate] = React.useState<Dayjs | null>(null);
-  const [isSelectingStart, setIsSelectingStart] = React.useState(true);
-  const [selectedHours, setSelectedHours] = React.useState(3); // для почасовой
+  const [isSelectingStart, setIsSelectingStart] = React.useState<boolean>(true);
+  const [selectedHours, setSelectedHours] = React.useState<number>(3);
 
-  const isHourly = card?.priceType === 'hour';
+  const isHourly: boolean = card?.priceType === 'hour';
 
-  const handleDateChange = (newDate: Dayjs | null) => {
+  const handleDateChange = (newDate: Dayjs | null): void => {
     if (!newDate?.isValid) return;
     
     if (isHourly) {
-      // Для почасовой - выбираем только дату начала
       setStartDate(newDate);
       setEndDate(null);
     } else {
-      // Для посуточной - как обычно
       if (isSelectingStart) {
         setStartDate(newDate);
         setEndDate(null);
@@ -52,18 +64,18 @@ export default function BookingCalendar({ priceValue, card }) {
     }
   };
 
-  const isInRange = (date: Dayjs) => {
+  const isInRange = (date: Dayjs): boolean => {
     if (!startDate || !endDate) return false;
     return date.isAfter(startDate) && date.isBefore(endDate);
   };
 
-  const isStartOrEnd = (date: Dayjs) => {
+  const isStartOrEnd = (date: Dayjs): 'start' | 'end' | null => {
     if (startDate && date.isSame(startDate, 'day')) return 'start';
     if (endDate && date.isSame(endDate, 'day')) return 'end';
     return null;
   };
 
-  const calculatePrice = () => {
+  const calculatePrice = (): number => {
     if (!startDate) return 0;
     
     if (isHourly) {
@@ -85,7 +97,7 @@ export default function BookingCalendar({ priceValue, card }) {
     return totalPrice;
   };
 
-  const getDayClassName = (date: Dayjs) => {
+  const getDayClassName = (date: Dayjs): string => {
     const rangeStatus = isStartOrEnd(date);
     const inRange = isInRange(date);
     const isBooked = BOOKED_DATES.includes(date.format('YYYY-MM-DD'));
@@ -114,8 +126,12 @@ export default function BookingCalendar({ priceValue, card }) {
     return className;
   };
 
-  const daysCount = startDate && endDate ? endDate.diff(startDate, 'day') : 0;
-  const totalPrice = calculatePrice();
+  const daysCount: number = startDate && endDate ? endDate.diff(startDate, 'day') : 0;
+  const totalPrice: number = calculatePrice();
+
+  const handleHoursChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
+    setSelectedHours(Number(e.target.value));
+  };
 
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale='ru'>
@@ -134,7 +150,7 @@ export default function BookingCalendar({ priceValue, card }) {
                     min={card?.minHours || 1}
                     max={12}
                     value={selectedHours}
-                    onChange={(e) => setSelectedHours(Number(e.target.value))}
+                    onChange={handleHoursChange}
                     style={{ 
                       marginLeft: '10px', 
                       padding: '5px 10px', 
@@ -181,12 +197,12 @@ export default function BookingCalendar({ priceValue, card }) {
           value={startDate || undefined}
           onChange={handleDateChange}
           disablePast
-          shouldDisableDate={(date) => {
+          shouldDisableDate={(date: Dayjs): boolean => {
             const dateString = date.format('YYYY-MM-DD');
             return BOOKED_DATES.includes(dateString);
           }}
           slotProps={{
-            day: (ownerState) => {
+            day: (ownerState: { day: Dayjs }) => {
               const date = ownerState.day;
               const className = getDayClassName(date);
               

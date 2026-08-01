@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import type { ChangeEvent } from 'react';
 
 type User = {
   name: string;
@@ -29,16 +30,15 @@ type Card = {
 type AdminPanelUseProps = {
   user: User;
   photos: Photo[];
-  onAddPhoto: (newPhoto: Omit<Photo, 'id'>) => void;  // Исправлено
+  onAddPhoto: (newPhoto: Omit<Photo, 'id'>) => void;
   onDeletePhoto: (id: number) => void;
   onUpdatePhoto: (id: number, newSrc: string, newAlt: string) => void;
   cards: Card[];
-  onAddCard: (newCard: Omit<Card, 'id'>) => void;  // Исправлено
+  onAddCard: (newCard: Omit<Card, 'id'>) => void;
   onDeleteCard: (id: number) => void;
   onUpdateCard: (id: number, newTitle: string, newDescription: string, newPrice: number, newPriceType: 'hour' | 'day', newMinHours?: number) => void;
-  priceValue: (value: number) => void;  // Исправлено
   reviews: Review[];
-  onAddReview: (newReview: Omit<Review, 'id'>) => void;  // Исправлено
+  onAddReview: (newReview: Omit<Review, 'id'>) => void;
   onDeleteReview: (id: number) => void;
   onUpdateReview: (id: number, newName: string, newText: string, newRating: number) => void;
 };
@@ -53,7 +53,6 @@ function AdminPanelUse({
   onAddCard,
   onDeleteCard,
   onUpdateCard,
-  priceValue,
   reviews,          
   onAddReview,         
   onDeleteReview,       
@@ -75,7 +74,7 @@ function AdminPanelUse({
   const [newReviewText, setNewReviewText] = useState<string>("");
   const [newReviewRating, setNewReviewRating] = useState<string>("5");
 
-  function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
+  function handleFileChange(event: ChangeEvent<HTMLInputElement>): void {
     if (event.target.files && event.target.files[0]) {
       const file = event.target.files[0];
       const reader = new FileReader();
@@ -88,7 +87,7 @@ function AdminPanelUse({
     }
   }
 
-  function handleAdd() {
+  function handleAdd(): void {
     if (!newImageUrl || !newImageAlt) {
       alert('Выберите фото и напишите описание!');
       return;
@@ -109,13 +108,13 @@ function AdminPanelUse({
     }
   }
 
-  function handleDelete(id: number) {
+  function handleDelete(id: number): void {
     if (confirm('Точно удалить это фото?')) {
       onDeletePhoto(id);
     }
   }
 
-  function handleUpdate(id: number) {
+  function handleUpdate(id: number): void {
     const newAlt = prompt('Введите новое описание:');
     if (newAlt && newAlt.trim() !== '') {
       const currentPhoto = photos.find(function(p) { return p.id === id; });
@@ -125,7 +124,7 @@ function AdminPanelUse({
     }
   }
 
-  function handleAddCard() {
+  function handleAddCard(): void {
     if (!newCardTitle || !newCardDescription || !newCardPrice) {
       alert('Заполните название, описание и цену!');
       return;
@@ -160,13 +159,13 @@ function AdminPanelUse({
     setNewCardMinHours("");
   }
 
-  function handleDeleteCard(id: number) {
+  function handleDeleteCard(id: number): void {
     if (confirm('Точно удалить эту карточку?')) {
       onDeleteCard(id);
     }
   }
 
-  function handleUpdateCard(id: number) {
+  function handleUpdateCard(id: number): void {
     const cardToUpdate = cards.find(c => c.id === id);
     if (!cardToUpdate) return;
 
@@ -203,7 +202,7 @@ function AdminPanelUse({
     onUpdateCard(id, newTitle, newDescription, newPrice, newPriceType, newMinHours);
   }
 
-  function handleAddReview() {
+  function handleAddReview(): void {
     if (!newReviewName || !newReviewText) {
       alert('Заполните имя и текст отзыва!');
       return;
@@ -227,13 +226,13 @@ function AdminPanelUse({
     setNewReviewRating("5");
   }
 
-  function handleDeleteReview(id: number) {
+  function handleDeleteReview(id: number): void {
     if (confirm('Точно удалить этот отзыв?')) {
       onDeleteReview(id);
     }
   }
 
-  function handleUpdateReview(id: number) {
+  function handleUpdateReview(id: number): void {
     const reviewToUpdate = reviews.find(r => r.id === id);
     if (!reviewToUpdate) return;
 
@@ -275,7 +274,7 @@ function AdminPanelUse({
               type="text" 
               placeholder="Описание фото" 
               value={newImageAlt}
-              onChange={function(e) { setNewImageAlt(e.target.value); }}
+              onChange={(e: ChangeEvent<HTMLInputElement>) => setNewImageAlt(e.target.value)}
               style={{ display: 'block', marginBottom: '10px', width: '100%' }}
             />
             
@@ -290,20 +289,18 @@ function AdminPanelUse({
 
           <h3>Все фото ({photos.length})</h3>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '20px' }}>
-            {photos.map(function(photo) {
-              return (
-                <div key={photo.id} style={{ border: '1px solid #ddd', padding: '10px' }}>
-                  <img src={photo.src} alt={photo.alt} style={{ width: '150px', height: '100px', objectFit: 'cover' }} />
-                  <p>{photo.alt}</p>
-                  <button onClick={function() { handleDelete(photo.id); }}>
-                    Удалить
-                  </button>
-                  <button onClick={function() { handleUpdate(photo.id); }}>
-                    Изменить
-                  </button>
-                </div>
-              );
-            })}
+            {photos.map((photo) => (
+              <div key={photo.id} style={{ border: '1px solid #ddd', padding: '10px' }}>
+                <img src={photo.src} alt={photo.alt} style={{ width: '150px', height: '100px', objectFit: 'cover' }} />
+                <p>{photo.alt}</p>
+                <button onClick={() => handleDelete(photo.id)}>
+                  Удалить
+                </button>
+                <button onClick={() => handleUpdate(photo.id)}>
+                  Изменить
+                </button>
+              </div>
+            ))}
           </div>
         </div>
       );
@@ -321,7 +318,7 @@ function AdminPanelUse({
               type="text" 
               placeholder="Название (например: 👥 До 20 человек)" 
               value={newCardTitle}
-              onChange={function(e) { setNewCardTitle(e.target.value); }}
+              onChange={(e: ChangeEvent<HTMLInputElement>) => setNewCardTitle(e.target.value)}
               style={{ display: 'block', marginBottom: '10px', width: '100%' }}
             />
             
@@ -329,7 +326,7 @@ function AdminPanelUse({
               type="text" 
               placeholder="Описание" 
               value={newCardDescription}
-              onChange={function(e) { setNewCardDescription(e.target.value); }}
+              onChange={(e: ChangeEvent<HTMLInputElement>) => setNewCardDescription(e.target.value)}
               style={{ display: 'block', marginBottom: '10px', width: '100%' }}
             />
             
@@ -337,7 +334,7 @@ function AdminPanelUse({
               type="number" 
               placeholder="Цена (например: 12000)" 
               value={newCardPrice}
-              onChange={function(e) { setNewCardPrice(e.target.value); }}
+              onChange={(e: ChangeEvent<HTMLInputElement>) => setNewCardPrice(e.target.value)}
               style={{ display: 'block', marginBottom: '10px', width: '100%' }}
             />
 
@@ -347,7 +344,7 @@ function AdminPanelUse({
                   type="radio" 
                   value="day"
                   checked={newCardPriceType === 'day'}
-                  onChange={function(e) { setNewCardPriceType('day'); }}
+                  onChange={() => setNewCardPriceType('day')}
                 /> Посуточная
               </label>
               <label style={{ marginLeft: '15px' }}>
@@ -355,7 +352,7 @@ function AdminPanelUse({
                   type="radio" 
                   value="hour"
                   checked={newCardPriceType === 'hour'}
-                  onChange={function(e) { setNewCardPriceType('hour'); }}
+                  onChange={() => setNewCardPriceType('hour')}
                 /> Почасовая
               </label>
             </div>
@@ -365,7 +362,7 @@ function AdminPanelUse({
                 type="number" 
                 placeholder="Минимальное количество часов (например: 3)" 
                 value={newCardMinHours}
-                onChange={function(e) { setNewCardMinHours(e.target.value); }}
+                onChange={(e: ChangeEvent<HTMLInputElement>) => setNewCardMinHours(e.target.value)}
                 style={{ display: 'block', marginBottom: '10px', width: '100%' }}
               />
             )}
@@ -375,21 +372,19 @@ function AdminPanelUse({
 
           <h3>Все карточки ({cards.length})</h3>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '20px' }}>
-            {cards.map(function(card) {
-              return (
-                <div key={card.id} style={{ border: '1px solid #ddd', padding: '15px', width: '280px' }}>
-                  <h3>{card.title}</h3>
-                  <p>{card.description}</p>
-                  <p><strong>Цена:</strong> {card.price}₽ {card.priceType === 'hour' ? `/час (мин. ${card.minHours}ч)` : '/сутки'}</p>
-                  <button onClick={function() { handleDeleteCard(card.id); }}>
-                    Удалить
-                  </button>
-                  <button onClick={function() { handleUpdateCard(card.id); }}>
-                    Изменить
-                  </button>
-                </div>
-              );
-            })}
+            {cards.map((card) => (
+              <div key={card.id} style={{ border: '1px solid #ddd', padding: '15px', width: '280px' }}>
+                <h3>{card.title}</h3>
+                <p>{card.description}</p>
+                <p><strong>Цена:</strong> {card.price}₽ {card.priceType === 'hour' ? `/час (мин. ${card.minHours}ч)` : '/сутки'}</p>
+                <button onClick={() => handleDeleteCard(card.id)}>
+                  Удалить
+                </button>
+                <button onClick={() => handleUpdateCard(card.id)}>
+                  Изменить
+                </button>
+              </div>
+            ))}
           </div>
         </div>
       );
@@ -401,7 +396,7 @@ function AdminPanelUse({
           <h2>Управление ценами</h2>
           <p>Цены редактируются в карточках услуг</p>
           <div style={{ border: '1px solid #ddd', padding: '20px', marginTop: '20px' }}>
-            {cards.map(card => (
+            {cards.map((card) => (
               <div key={card.id} style={{ borderBottom: '1px solid #eee', padding: '10px 0' }}>
                 <p><strong>{card.title}</strong></p>
                 <p>Цена: {card.price}₽ {card.priceType === 'hour' ? `/час (мин. ${card.minHours}ч)` : '/сутки'}</p>
@@ -424,7 +419,7 @@ function AdminPanelUse({
               type="text" 
               placeholder="Имя автора" 
               value={newReviewName}
-              onChange={function(e) { setNewReviewName(e.target.value); }}
+              onChange={(e: ChangeEvent<HTMLInputElement>) => setNewReviewName(e.target.value)}
               style={{ display: 'block', marginBottom: '10px', width: '100%' }}
             />
             
@@ -432,7 +427,7 @@ function AdminPanelUse({
               type="text" 
               placeholder="Текст отзыва" 
               value={newReviewText}
-              onChange={function(e) { setNewReviewText(e.target.value); }}
+              onChange={(e: ChangeEvent<HTMLInputElement>) => setNewReviewText(e.target.value)}
               style={{ display: 'block', marginBottom: '10px', width: '100%' }}
             />
             
@@ -440,7 +435,7 @@ function AdminPanelUse({
               type="number" 
               placeholder="Рейтинг (1-5)" 
               value={newReviewRating}
-              onChange={function(e) { setNewReviewRating(e.target.value); }}
+              onChange={(e: ChangeEvent<HTMLInputElement>) => setNewReviewRating(e.target.value)}
               style={{ display: 'block', marginBottom: '10px', width: '100%' }}
               min="1"
               max="5"
@@ -451,20 +446,18 @@ function AdminPanelUse({
 
           <h3>Все отзывы ({reviews.length})</h3>
           <div>
-            {reviews.map(function(review) {
-              return (
-                <div key={review.id} style={{ border: '1px solid #ddd', padding: '15px', marginBottom: '10px' }}>
-                  <p><strong>{review.name}</strong> - {'⭐'.repeat(review.rating)}</p>
-                  <p>{review.text}</p>
-                  <button onClick={function() { handleDeleteReview(review.id); }}>
-                    Удалить
-                  </button>
-                  <button onClick={function() { handleUpdateReview(review.id); }}>
-                    Изменить
-                  </button>
-                </div>
-              );
-            })}
+            {reviews.map((review) => (
+              <div key={review.id} style={{ border: '1px solid #ddd', padding: '15px', marginBottom: '10px' }}>
+                <p><strong>{review.name}</strong> - {'⭐'.repeat(review.rating)}</p>
+                <p>{review.text}</p>
+                <button onClick={() => handleDeleteReview(review.id)}>
+                  Удалить
+                </button>
+                <button onClick={() => handleUpdateReview(review.id)}>
+                  Изменить
+                </button>
+              </div>
+            ))}
           </div>
         </div>
       );
@@ -537,85 +530,35 @@ function AdminPanelUse({
         
         <div 
           style={activeTab === "главная" ? menuItemActiveStyle : menuItemStyle}
-          onClick={function() { setActiveTab("главная"); }}
-          onMouseEnter={function(e) { 
-            if (activeTab !== "главная") {
-              e.currentTarget.style.backgroundColor = '#34495e';
-            }
-          }}
-          onMouseLeave={function(e) { 
-            if (activeTab !== "главная") {
-              e.currentTarget.style.backgroundColor = 'transparent';
-            }
-          }}
+          onClick={() => setActiveTab("главная")}
         >
           🏠 Главная (фото)
         </div>
         
         <div 
           style={activeTab === "карточки" ? menuItemActiveStyle : menuItemStyle}
-          onClick={function() { setActiveTab("карточки"); }}
-          onMouseEnter={function(e) { 
-            if (activeTab !== "карточки") {
-              e.currentTarget.style.backgroundColor = '#34495e';
-            }
-          }}
-          onMouseLeave={function(e) { 
-            if (activeTab !== "карточки") {
-              e.currentTarget.style.backgroundColor = 'transparent';
-            }
-          }}
+          onClick={() => setActiveTab("карточки")}
         >
           📋 Карточки услуг
         </div>
         
         <div 
           style={activeTab === "цены" ? menuItemActiveStyle : menuItemStyle}
-          onClick={function() { setActiveTab("цены"); }}
-          onMouseEnter={function(e) { 
-            if (activeTab !== "цены") {
-              e.currentTarget.style.backgroundColor = '#34495e';
-            }
-          }}
-          onMouseLeave={function(e) { 
-            if (activeTab !== "цены") {
-              e.currentTarget.style.backgroundColor = 'transparent';
-            }
-          }}
+          onClick={() => setActiveTab("цены")}
         >
           💰 Цены
         </div>
         
         <div 
           style={activeTab === "отзывы" ? menuItemActiveStyle : menuItemStyle}
-          onClick={function() { setActiveTab("отзывы"); }}
-          onMouseEnter={function(e) { 
-            if (activeTab !== "отзывы") {
-              e.currentTarget.style.backgroundColor = '#34495e';
-            }
-          }}
-          onMouseLeave={function(e) { 
-            if (activeTab !== "отзывы") {
-              e.currentTarget.style.backgroundColor = 'transparent';
-            }
-          }}
+          onClick={() => setActiveTab("отзывы")}
         >
           ⭐ Отзывы
         </div>
         
         <div 
           style={activeTab === "бронь" ? menuItemActiveStyle : menuItemStyle}
-          onClick={function() { setActiveTab("бронь"); }}
-          onMouseEnter={function(e) { 
-            if (activeTab !== "бронь") {
-              e.currentTarget.style.backgroundColor = '#34495e';
-            }
-          }}
-          onMouseLeave={function(e) { 
-            if (activeTab !== "бронь") {
-              e.currentTarget.style.backgroundColor = 'transparent';
-            }
-          }}
+          onClick={() => setActiveTab("бронь")}
         >
           📅 Бронирование
         </div>

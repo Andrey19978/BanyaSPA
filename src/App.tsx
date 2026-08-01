@@ -132,7 +132,8 @@ function App() {
     setCards(updatedCards);
   }
 
-  const [priceValue, setPriceValue] = useState<number>(5000);
+  // Удаляем неиспользуемый setPriceValue
+  const [priceValue] = useState<number>(5000);
 
   const [reviews, setReviews] = useState<Review[]>([
     { id: 1, name: 'Анна', text: 'Отличное место!', rating: 5 },
@@ -192,7 +193,6 @@ function App() {
               onAddCard={addCard}
               onDeleteCard={deleteCard}
               onUpdateCard={updateCard}
-              priceValue={setPriceValue}
               reviews={reviews}
               onAddReview={addReview}
               onDeleteReview={deleteReview}
