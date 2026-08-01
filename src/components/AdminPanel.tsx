@@ -4,6 +4,13 @@ type User = {
   name: string;
 };
 
+type Review = {
+  id: number;
+  name: string;
+  text: string;
+  rating: number;
+};
+
 type Photo = {
   id: number;
   src: string;
@@ -30,6 +37,11 @@ type AdminPanelUseProps = {
   onDeleteCard: (id: number) => void;
   onUpdateCard: (id: number, newTitle: string, newDescription: string, newPrice: number, newPriceType: 'hour' | 'day', newMinHours?: number) => void;
   priceValue: (id: number) => void;
+  reviews: Review[];                    // ← добавить
+  onAddReview: (newReview: Review) => void;      // ← добавить
+  onDeleteReview: (id: number) => void;          // ← добавить
+  onUpdateReview: (id: number, newName: string, newText: string, newRating: number) => void; // ← добавить
+
 };
 
 function AdminPanelUse({ 
@@ -43,6 +55,10 @@ function AdminPanelUse({
   onDeleteCard,
   onUpdateCard,
   priceValue,
+    reviews,          
+  onAddReview,         
+  onDeleteReview,       
+  onUpdateReview,
 }: AdminPanelUseProps) {
   
   const [activeTab, setActiveTab] = useState("главная");
@@ -55,6 +71,10 @@ function AdminPanelUse({
   const [newCardPrice, setNewCardPrice] = useState("");
   const [newCardPriceType, setNewCardPriceType] = useState<'hour' | 'day'>('day');
   const [newCardMinHours, setNewCardMinHours] = useState("");
+
+  const [newReviewName, setNewReviewName] = useState("");
+const [newReviewText, setNewReviewText] = useState("");
+const [newReviewRating, setNewReviewRating] = useState("5");
 
   function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
     if (event.target.files && event.target.files[0]) {
@@ -185,6 +205,58 @@ function AdminPanelUse({
     
     onUpdateCard(id, newTitle, newDescription, newPrice, newPriceType, newMinHours);
   }
+
+  function handleAddReview() {
+  if (!newReviewName || !newReviewText) {
+    alert('Заполните имя и текст отзыва!');
+    return;
+  }
+
+  const rating = Number(newReviewRating);
+  if (isNaN(rating) || rating < 1 || rating > 5) {
+    alert('Рейтинг должен быть от 1 до 5!');
+    return;
+  }
+
+  const newReview: Review = {
+    id: Date.now(),
+    name: newReviewName,
+    text: newReviewText,
+    rating: rating
+  };
+  
+  onAddReview(newReview);
+  setNewReviewName("");
+  setNewReviewText("");
+  setNewReviewRating("5");
+}
+
+function handleDeleteReview(id: number) {
+  if (confirm('Точно удалить этот отзыв?')) {
+    onDeleteReview(id);
+  }
+}
+
+function handleUpdateReview(id: number) {
+  const reviewToUpdate = reviews.find(r => r.id === id);
+  if (!reviewToUpdate) return;
+
+  const newName = prompt('Введите новое имя:', reviewToUpdate.name);
+  if (newName === null) return;
+  
+  const newText = prompt('Введите новый текст:', reviewToUpdate.text);
+  if (newText === null) return;
+  
+  const newRatingStr = prompt('Введите новый рейтинг (1-5):', String(reviewToUpdate.rating));
+  if (newRatingStr === null) return;
+  const newRating = Number(newRatingStr);
+  if (isNaN(newRating) || newRating < 1 || newRating > 5) {
+    alert('Рейтинг должен быть от 1 до 5!');
+    return;
+  }
+  
+  onUpdateReview(id, newName, newText, newRating);
+}
 
   function renderContent() {
     if (activeTab === "главная") {
@@ -344,19 +416,64 @@ function AdminPanelUse({
       );
     }
 
-    if (activeTab === "отзывы") {
-      return (
-        <div>
-          <h2>Управление отзывами</h2>
-          <p>Здесь будешь модерировать и добавлять отзывы</p>
-          <div style={{ border: '1px solid #ddd', padding: '20px', marginTop: '20px' }}>
-            <p>⭐ "Отличный бассейн!" - Иван</p>
-            <p>⭐ "Чисто и уютно" - Мария</p>
-            <p>⭐ "Приятный персонал" - Петр</p>
-          </div>
-        </div>
-      );
-    }
+if (activeTab === "отзывы") {
+  return (
+    <div>
+      <h2>Управление отзывами</h2>
+      
+      {/* Форма добавления */}
+      <div style={{ border: '1px solid #ccc', padding: '15px', marginBottom: '20px' }}>
+        <h3>Добавить новый отзыв</h3>
+        
+        <input 
+          type="text" 
+          placeholder="Имя автора" 
+          value={newReviewName}
+          onChange={function(e) { setNewReviewName(e.target.value); }}
+          style={{ display: 'block', marginBottom: '10px', width: '100%' }}
+        />
+        
+        <input 
+          type="text" 
+          placeholder="Текст отзыва" 
+          value={newReviewText}
+          onChange={function(e) { setNewReviewText(e.target.value); }}
+          style={{ display: 'block', marginBottom: '10px', width: '100%' }}
+        />
+        
+        <input 
+          type="number" 
+          placeholder="Рейтинг (1-5)" 
+          value={newReviewRating}
+          onChange={function(e) { setNewReviewRating(e.target.value); }}
+          style={{ display: 'block', marginBottom: '10px', width: '100%' }}
+          min="1"
+          max="5"
+        />
+        
+        <button onClick={handleAddReview}>Добавить отзыв</button>
+      </div>
+
+      <h3>Все отзывы ({reviews.length})</h3>
+      <div>
+        {reviews.map(function(review) {
+          return (
+            <div key={review.id} style={{ border: '1px solid #ddd', padding: '15px', marginBottom: '10px' }}>
+              <p><strong>{review.name}</strong> - {'⭐'.repeat(review.rating)}</p>
+              <p>{review.text}</p>
+              <button onClick={function() { handleDeleteReview(review.id); }}>
+                Удалить
+              </button>
+              <button onClick={function() { handleUpdateReview(review.id); }}>
+                Изменить
+              </button>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
     if (activeTab === "бронь") {
       return (

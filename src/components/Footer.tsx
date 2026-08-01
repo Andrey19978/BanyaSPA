@@ -1,16 +1,25 @@
 import './Footer.css';
 
-function Footer() {
+type Review = {
+  id: number;
+  name: string;
+  text: string;
+  rating: number;
+};
+
+function Footer({ reviews }: { reviews: Review[] }) {
   return (
     <footer className="footer">
       <div className="container footer-content">
         <div className="footer-section">
           <h3>⭐ Отзывы</h3>
-          <div className="reviews">
-            <p>⭐ "Отличное место!" - Анна</p>
-            <p>⭐ "Будем приходить еще!" - Иван</p>
-            <p>⭐ "Всё супер!" - Мария</p>
-          </div>
+<div className="reviews">
+  {reviews.map(review => (
+    <p key={review.id}>
+      {'⭐'.repeat(review.rating)} "{review.text}" - {review.name}
+    </p>
+  ))}
+</div>
           <button className="review-btn">Оставить отзыв</button>
         </div>
 
