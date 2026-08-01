@@ -10,7 +10,6 @@ import heroImage from './assets/photo_5240452124167049405_y.jpg';
 import heroImage2 from './assets/photo_5240452124167049423_y.jpg';
 import heroImage3 from './assets/photo_5240452124167049424_y.jpg';
 
-
 type Review = {
   id: number;
   name: string;
@@ -24,7 +23,6 @@ type Photo = {
   alt: string;
 };
 
-
 type Card = {
   id: number;
   title: string;
@@ -33,7 +31,6 @@ type Card = {
   priceType: 'hour' | 'day';
   minHours?: number;
 };
-
 
 type CardWithButton = Card & {
   buttonText: string;
@@ -77,7 +74,6 @@ function App() {
     setGalleryPhotos(updatedPhotos);
   }
 
-  // Используем Card (без buttonText) для совместимости с AdminPanel
   const [cards, setCards] = useState<Card[]>([
     {
       id: 1,
@@ -136,7 +132,7 @@ function App() {
     setCards(updatedCards);
   }
 
-  const [priceValue, setPriceValue] = useState(5000);
+  const [priceValue, setPriceValue] = useState<number>(5000);
 
   const [reviews, setReviews] = useState<Review[]>([
     { id: 1, name: 'Анна', text: 'Отличное место!', rating: 5 },

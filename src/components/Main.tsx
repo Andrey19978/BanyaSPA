@@ -2,12 +2,34 @@ import './Main.css';
 import { useState } from 'react';
 import BookingCalendar from "./BookingCalendar.tsx"
 
-function Main({ photos, cards, priceValue }) {
+// Добавляем типы для пропсов
+type Photo = {
+  id: number;
+  src: string;
+  alt: string;
+};
 
+type Card = {
+  id: number;
+  title: string;
+  description: string;
+  price: number;
+  priceType: 'hour' | 'day';
+  minHours?: number;
+  buttonText: string;
+};
+
+type MainProps = {
+  photos: Photo[];
+  cards: Card[];
+  priceValue: number;
+};
+
+function Main({ photos, cards, priceValue }: MainProps) {
   const [bookingModel, setbookingModel] = useState(false);
-  const [selectedCard, setSelectedCard] = useState(null);
+  const [selectedCard, setSelectedCard] = useState<Card | null>(null);
 
-  function openBookingModel(card) {
+  function openBookingModel(card: Card) {
     setSelectedCard(card);
     setbookingModel(true);
   }
@@ -28,7 +50,7 @@ function Main({ photos, cards, priceValue }) {
         <section className="gallery-section">
           <h2 className="section-title">Фотогалерея</h2>
           <div className="gallery-scroll">
-            {photos.map(photo => (
+            {photos.map((photo: Photo) => (
               <div key={photo.id} className="gallery-item">
                 <img
                   src={photo.src}
@@ -52,14 +74,14 @@ function Main({ photos, cards, priceValue }) {
         <section className="services-section">
           <h2 className="section-title">Наши услуги</h2>
           <div className="cards-grid">
-            {cards.map(card => (
+            {cards.map((card: Card) => (
               <div key={card.id} className="card">
                 <h3>{card.title}</h3>
                 <p>{card.description}</p>
                 <p style={{ fontWeight: 'bold', color: '#2c3e50' }}>
                   {card.price}₽ {card.priceType === 'hour' ? `/час (мин. ${card.minHours}ч)` : '/сутки'}
                 </p>
-                <button onClick={function() { openBookingModel(card); }} className="book-btn">
+                <button onClick={() => openBookingModel(card)} className="book-btn">
                   {card.buttonText}
                 </button>
               </div>
