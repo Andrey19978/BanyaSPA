@@ -13,21 +13,20 @@ function Header({
   onLogout: () => void;
 }) {
 
+  // Только для модалок
   const [localLogin, setLocalLogin] = useState("");
   const [password, setPassword] = useState("");
   const [phone, setPhone] = useState("");
   const [isVisible, setIsVisible] = useState(false);
   const [registr, setRegisr] = useState(false);
   const [error, setError] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
 
-  // API URL из переменных окружения или дефолтное значение
+  // API URL
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
   const openModel = () => {
     setIsVisible(true);
     setLocalLogin(""); 
-    setPassword("");
     setError("");
   };
 
@@ -41,7 +40,6 @@ function Header({
   const openRegistr = () => {
     setRegisr(true);
     setError("");
-    setPhone("");
   };
 
   const closeRegistr = () => {
@@ -52,23 +50,14 @@ function Header({
     setError("");
   };
 
-  // Функция для входа
   const handleLoginClick = async () => {
     if (!localLogin.trim() || !password.trim()) {
       setError("Заполните все поля");
       return;
     }
 
-    setIsLoading(true);
-    setError("");
-
     try {
-      // Для входа нам нужно проверить пользователя в БД
-      // Так как у вас пока нет эндпоинта для входа, используем регистрацию как проверку
-      // В реальном проекте нужно добавить эндпоинт /api/login
-      
-      // Простая проверка - делаем запрос к существующему пользователю
-      const response = await fetch(`${API_URL}/api/users/check`, {
+      const response = await fetch(`${API_URL}/api/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -76,42 +65,25 @@ function Header({
         body: JSON.stringify({ email: localLogin, password }),
       });
 
+      const data = await response.json();
+
       if (response.ok) {
         onLogin(localLogin);
         closeModal();
       } else {
-        const data = await response.json();
         setError(data.error || "Ошибка входа");
       }
     } catch (err) {
       setError("Ошибка подключения к серверу");
       console.error(err);
-    } finally {
-      setIsLoading(false);
     }
   };
 
-  // Функция для регистрации
   const handleRegisterClick = async () => {
     if (!localLogin.trim() || !password.trim() || !phone.trim()) {
       setError("Заполните все поля");
       return;
     }
-
-    // Простая валидация email
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(localLogin)) {
-      setError("Введите корректный email");
-      return;
-    }
-
-    if (password.length < 6) {
-      setError("Пароль должен быть не менее 6 символов");
-      return;
-    }
-
-    setIsLoading(true);
-    setError("");
 
     try {
       const response = await fetch(`${API_URL}/api/register`, {
@@ -122,7 +94,7 @@ function Header({
         body: JSON.stringify({ 
           email: localLogin, 
           password: password,
-          phone: phone // добавим телефон, хотя в БД его пока нет
+          phone: phone
         }),
       });
 
@@ -138,8 +110,6 @@ function Header({
     } catch (err) {
       setError("Ошибка подключения к серверу");
       console.error(err);
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -169,11 +139,10 @@ function Header({
         <div className='modal_okno' onClick={closeModal}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <button className='buttCloseModal' onClick={closeModal}>Закрыть</button>
-            <h2>Вход</h2>
-            {error && <div className="error-message" style={{color: 'red', margin: '10px 0'}}>{error}</div>}
+            {error && <div style={{color: 'red', marginBottom: '10px'}}>{error}</div>}
             <input
-              type="email"
-              placeholder="Email"
+              type="text"
+              placeholder="Логин"
               value={localLogin}
               onChange={(e) => setLocalLogin(e.target.value)}
             />
@@ -182,23 +151,13 @@ function Header({
               placeholder="Пароль"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleLoginClick()}
             />
-            <button 
-              className='formButtLogin' 
-              onClick={handleLoginClick}
-              disabled={isLoading}
-            >
-              {isLoading ? "Загрузка..." : "Войти"}
-            </button>
-            <button 
-              onClick={() => {
-                openRegistr();
-                closeModal();
-              }}
-              className="link-btn"
-            >
-              Нет аккаунта? Зарегистрироваться
+            <button onClick={() => {
+              openRegistr();
+              closeModal();
+            }}>Регистрация</button>
+            <button className='formButtLogin' onClick={handleLoginClick}>
+              Войти
             </button>
           </div>
         </div>
@@ -209,42 +168,30 @@ function Header({
         <div className='modal_okno' onClick={closeRegistr}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <button className='buttCloseModal' onClick={closeRegistr}>Закрыть</button>
-            <h2>Регистрация</h2>
-            {error && <div className="error-message" style={{color: 'red', margin: '10px 0'}}>{error}</div>}
+            {error && <div style={{color: 'red', marginBottom: '10px'}}>{error}</div>}
             <input
-              type="email"
-              placeholder="Email"
+              type="text"
+              placeholder="Логин"
               value={localLogin}
               onChange={(e) => setLocalLogin(e.target.value)}
             />
             <input
               type="password"
-              placeholder="Пароль (мин. 6 символов)"
+              placeholder="Пароль"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
             <input
-              type="tel"
+              type="text"
               placeholder="Номер телефона"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
             />
-            <button 
-              className='formButtLogin' 
-              onClick={handleRegisterClick}
-              disabled={isLoading}
-            >
-              {isLoading ? "Загрузка..." : "Зарегистрироваться"}
-            </button>
-            <button 
-              onClick={() => {
-                openModel();
-                closeRegistr();
-              }}
-              className="link-btn"
-            >
-              Уже есть аккаунт? Войти
-            </button>
+            <button onClick={handleRegisterClick}>Регистрация</button>
+            <button className='formButtLogin' onClick={() => {
+              openModel();
+              closeRegistr();
+            }}>Вход</button>
           </div>
         </div>
       )}
