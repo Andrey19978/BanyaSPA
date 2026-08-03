@@ -63,7 +63,7 @@ function AdminPanelUse({
   onAddReview,         
   onDeleteReview,       
   onUpdateReview,
-  bookings,
+  bookings: initialBookings,
   onDeleteBooking,
   onUpdateBookingStatus,
   onAddBookingByAdmin
@@ -83,6 +83,75 @@ function AdminPanelUse({
   const [newReviewName, setNewReviewName] = useState<string>("");
   const [newReviewText, setNewReviewText] = useState<string>("");
   const [newReviewRating, setNewReviewRating] = useState<string>("5");
+
+  // Состояния для вкладки "бронь"
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newBookingData, setNewBookingData] = useState({
+    user_email: '',
+    booking_date: '',
+    hours: '',
+    total_price: ''
+  });
+  const [localBookings, setLocalBookings] = useState<any[]>(initialBookings);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Загрузка бронирований при открытии вкладки
+  useEffect(() => {
+    if (activeTab === "бронь") {
+      loadBookings();
+    }
+  }, [activeTab]);
+
+  const loadBookings = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch(`${API_URL}/api/bookings`);
+      const data = await response.json();
+      if (data.success) {
+        setLocalBookings(data.bookings);
+      }
+    } catch (error) {
+      console.error('Ошибка загрузки бронирований:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDeleteBookingLocal = async (id: number) => {
+    if (!confirm('Точно удалить это бронирование?')) return;
+    await onDeleteBooking(id);
+    await loadBookings();
+  };
+
+  const handleUpdateStatusLocal = async (id: number, status: string) => {
+    await onUpdateBookingStatus(id, status);
+    await loadBookings();
+  };
+
+  const handleAddBookingLocal = async () => {
+    if (!newBookingData.user_email || !newBookingData.booking_date || !newBookingData.total_price) {
+      alert('Заполните все поля!');
+      return;
+    }
+
+    const success = await onAddBookingByAdmin({
+      user_email: newBookingData.user_email,
+      booking_date: newBookingData.booking_date,
+      hours: newBookingData.hours ? Number(newBookingData.hours) : null,
+      total_price: Number(newBookingData.total_price)
+    });
+
+    if (success) {
+      setNewBookingData({
+        user_email: '',
+        booking_date: '',
+        hours: '',
+        total_price: ''
+      });
+      setShowAddForm(false);
+      await loadBookings();
+    }
+  };
 
   function handleFileChange(event: ChangeEvent<HTMLInputElement>): void {
     if (event.target.files && event.target.files[0]) {
@@ -262,6 +331,136 @@ function AdminPanelUse({
     
     onUpdateReview(id, newName, newText, newRating);
   }
+
+  // Рендер вкладки "бронь"
+  const renderBookingsTab = () => {
+    return (
+      <div>
+        <h2>Управление бронированием</h2>
+        
+        <div style={{ marginBottom: '20px' }}>
+          <button onClick={() => setShowAddForm(!showAddForm)}>
+            {showAddForm ? 'Скрыть форму' : '➕ Добавить бронирование вручную'}
+          </button>
+          <button onClick={loadBookings} style={{ marginLeft: '10px' }}>
+            🔄 Обновить
+          </button>
+        </div>
+
+        {showAddForm && (
+          <div style={{ border: '1px solid #ccc', padding: '15px', marginBottom: '20px' }}>
+            <h3>Добавить бронирование</h3>
+            <input
+              type="email"
+              placeholder="Email пользователя"
+              value={newBookingData.user_email}
+              onChange={(e) => setNewBookingData({...newBookingData, user_email: e.target.value})}
+              style={{ display: 'block', marginBottom: '10px', width: '100%', padding: '8px' }}
+            />
+            <input
+              type="date"
+              placeholder="Дата бронирования"
+              value={newBookingData.booking_date}
+              onChange={(e) => setNewBookingData({...newBookingData, booking_date: e.target.value})}
+              style={{ display: 'block', marginBottom: '10px', width: '100%', padding: '8px' }}
+            />
+            <input
+              type="number"
+              placeholder="Количество часов (опционально)"
+              value={newBookingData.hours}
+              onChange={(e) => setNewBookingData({...newBookingData, hours: e.target.value})}
+              style={{ display: 'block', marginBottom: '10px', width: '100%', padding: '8px' }}
+            />
+            <input
+              type="number"
+              placeholder="Стоимость"
+              value={newBookingData.total_price}
+              onChange={(e) => setNewBookingData({...newBookingData, total_price: e.target.value})}
+              style={{ display: 'block', marginBottom: '10px', width: '100%', padding: '8px' }}
+            />
+            <button onClick={handleAddBookingLocal} style={{ padding: '10px 20px' }}>
+              Добавить
+            </button>
+          </div>
+        )}
+
+        <h3>Все бронирования ({localBookings.length})</h3>
+        
+        {isLoading ? (
+          <p>Загрузка...</p>
+        ) : (
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '10px' }}>
+              <thead>
+                <tr style={{ backgroundColor: '#2c3e50', color: 'white' }}>
+                  <th style={{ padding: '10px', border: '1px solid #ddd' }}>ID</th>
+                  <th style={{ padding: '10px', border: '1px solid #ddd' }}>Пользователь</th>
+                  <th style={{ padding: '10px', border: '1px solid #ddd' }}>Дата</th>
+                  <th style={{ padding: '10px', border: '1px solid #ddd' }}>Часы</th>
+                  <th style={{ padding: '10px', border: '1px solid #ddd' }}>Стоимость</th>
+                  <th style={{ padding: '10px', border: '1px solid #ddd' }}>Статус</th>
+                  <th style={{ padding: '10px', border: '1px solid #ddd' }}>Действия</th>
+                </tr>
+              </thead>
+              <tbody>
+                {localBookings.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} style={{ textAlign: 'center', padding: '20px' }}>
+                      Нет бронирований
+                    </td>
+                  </tr>
+                ) : (
+                  localBookings.map((booking) => (
+                    <tr key={booking.id}>
+                      <td style={{ padding: '10px', border: '1px solid #ddd' }}>{booking.id}</td>
+                      <td style={{ padding: '10px', border: '1px solid #ddd' }}>{booking.user_email}</td>
+                      <td style={{ padding: '10px', border: '1px solid #ddd' }}>{new Date(booking.booking_date).toLocaleDateString('ru-RU')}</td>
+                      <td style={{ padding: '10px', border: '1px solid #ddd' }}>{booking.hours || '-'}</td>
+                      <td style={{ padding: '10px', border: '1px solid #ddd' }}>{booking.total_price}₽</td>
+                      <td style={{ padding: '10px', border: '1px solid #ddd' }}>
+                        <span style={{
+                          padding: '3px 8px',
+                          borderRadius: '4px',
+                          backgroundColor: booking.status === 'confirmed' ? '#d4edda' : 
+                                         booking.status === 'cancelled' ? '#f8d7da' : '#fff3cd',
+                          color: booking.status === 'confirmed' ? '#155724' : 
+                                 booking.status === 'cancelled' ? '#721c24' : '#856404'
+                        }}>
+                          {booking.status === 'pending' ? 'Ожидание' :
+                           booking.status === 'confirmed' ? 'Подтверждено' :
+                           booking.status === 'cancelled' ? 'Отменено' : booking.status}
+                        </span>
+                      </td>
+                      <td style={{ padding: '10px', border: '1px solid #ddd' }}>
+                        <button 
+                          onClick={() => handleUpdateStatusLocal(booking.id, 'confirmed')}
+                          style={{ marginRight: '5px', backgroundColor: '#28a745', color: 'white', border: 'none', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer' }}
+                        >
+                          ✅ Подтв.
+                        </button>
+                        <button 
+                          onClick={() => handleUpdateStatusLocal(booking.id, 'cancelled')}
+                          style={{ marginRight: '5px', backgroundColor: '#dc3545', color: 'white', border: 'none', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer' }}
+                        >
+                          ❌ Отм.
+                        </button>
+                        <button 
+                          onClick={() => handleDeleteBookingLocal(booking.id)}
+                          style={{ backgroundColor: '#6c757d', color: 'white', border: 'none', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer' }}
+                        >
+                          🗑️ Удалить
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    );
+  };
 
   function renderContent() {
     if (activeTab === "главная") {
@@ -474,189 +673,7 @@ function AdminPanelUse({
     }
 
     if (activeTab === "бронь") {
-      const [showAddForm, setShowAddForm] = useState(false);
-      const [newBookingData, setNewBookingData] = useState({
-        user_email: '',
-        booking_date: '',
-        hours: '',
-        total_price: ''
-      });
-      const [localBookings, setLocalBookings] = useState<any[]>(bookings);
-      const [isLoading, setIsLoading] = useState(true);
-
-      useEffect(() => {
-        loadBookings();
-      }, []);
-
-      const loadBookings = async () => {
-        setIsLoading(true);
-        try {
-          const response = await fetch(`${API_URL}/api/bookings`);
-          const data = await response.json();
-          if (data.success) {
-            setLocalBookings(data.bookings);
-          }
-        } catch (error) {
-          console.error('Ошибка загрузки бронирований:', error);
-        } finally {
-          setIsLoading(false);
-        }
-      };
-
-      const handleDeleteBookingLocal = async (id: number) => {
-        if (!confirm('Точно удалить это бронирование?')) return;
-        await onDeleteBooking(id);
-        await loadBookings();
-      };
-
-      const handleUpdateStatusLocal = async (id: number, status: string) => {
-        await onUpdateBookingStatus(id, status);
-        await loadBookings();
-      };
-
-      const handleAddBookingLocal = async () => {
-        if (!newBookingData.user_email || !newBookingData.booking_date || !newBookingData.total_price) {
-          alert('Заполните все поля!');
-          return;
-        }
-
-        const success = await onAddBookingByAdmin({
-          user_email: newBookingData.user_email,
-          booking_date: newBookingData.booking_date,
-          hours: newBookingData.hours ? Number(newBookingData.hours) : null,
-          total_price: Number(newBookingData.total_price)
-        });
-
-        if (success) {
-          setNewBookingData({
-            user_email: '',
-            booking_date: '',
-            hours: '',
-            total_price: ''
-          });
-          setShowAddForm(false);
-          await loadBookings();
-        }
-      };
-
-      return (
-        <div>
-          <h2>Управление бронированием</h2>
-          
-          <div style={{ marginBottom: '20px' }}>
-            <button onClick={() => setShowAddForm(!showAddForm)}>
-              {showAddForm ? 'Скрыть форму' : '➕ Добавить бронирование вручную'}
-            </button>
-            <button onClick={loadBookings} style={{ marginLeft: '10px' }}>
-              🔄 Обновить
-            </button>
-          </div>
-
-          {showAddForm && (
-            <div style={{ border: '1px solid #ccc', padding: '15px', marginBottom: '20px' }}>
-              <h3>Добавить бронирование</h3>
-              <input
-                type="email"
-                placeholder="Email пользователя"
-                value={newBookingData.user_email}
-                onChange={(e) => setNewBookingData({...newBookingData, user_email: e.target.value})}
-                style={{ display: 'block', marginBottom: '10px', width: '100%', padding: '8px' }}
-              />
-              <input
-                type="date"
-                placeholder="Дата бронирования"
-                value={newBookingData.booking_date}
-                onChange={(e) => setNewBookingData({...newBookingData, booking_date: e.target.value})}
-                style={{ display: 'block', marginBottom: '10px', width: '100%', padding: '8px' }}
-              />
-              <input
-                type="number"
-                placeholder="Количество часов (опционально)"
-                value={newBookingData.hours}
-                onChange={(e) => setNewBookingData({...newBookingData, hours: e.target.value})}
-                style={{ display: 'block', marginBottom: '10px', width: '100%', padding: '8px' }}
-              />
-              <input
-                type="number"
-                placeholder="Стоимость"
-                value={newBookingData.total_price}
-                onChange={(e) => setNewBookingData({...newBookingData, total_price: e.target.value})}
-                style={{ display: 'block', marginBottom: '10px', width: '100%', padding: '8px' }}
-              />
-              <button onClick={handleAddBookingLocal} style={{ padding: '10px 20px' }}>
-                Добавить
-              </button>
-            </div>
-          )}
-
-          <h3>Все бронирования ({localBookings.length})</h3>
-          
-          {isLoading ? (
-            <p>Загрузка...</p>
-          ) : (
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '10px' }}>
-                <thead>
-                  <tr style={{ backgroundColor: '#2c3e50', color: 'white' }}>
-                    <th style={{ padding: '10px', border: '1px solid #ddd' }}>ID</th>
-                    <th style={{ padding: '10px', border: '1px solid #ddd' }}>Пользователь</th>
-                    <th style={{ padding: '10px', border: '1px solid #ddd' }}>Дата</th>
-                    <th style={{ padding: '10px', border: '1px solid #ddd' }}>Часы</th>
-                    <th style={{ padding: '10px', border: '1px solid #ddd' }}>Стоимость</th>
-                    <th style={{ padding: '10px', border: '1px solid #ddd' }}>Статус</th>
-                    <th style={{ padding: '10px', border: '1px solid #ddd' }}>Действия</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {localBookings.map((booking) => (
-                    <tr key={booking.id}>
-                      <td style={{ padding: '10px', border: '1px solid #ddd' }}>{booking.id}</td>
-                      <td style={{ padding: '10px', border: '1px solid #ddd' }}>{booking.user_email}</td>
-                      <td style={{ padding: '10px', border: '1px solid #ddd' }}>{new Date(booking.booking_date).toLocaleDateString('ru-RU')}</td>
-                      <td style={{ padding: '10px', border: '1px solid #ddd' }}>{booking.hours || '-'}</td>
-                      <td style={{ padding: '10px', border: '1px solid #ddd' }}>{booking.total_price}₽</td>
-                      <td style={{ padding: '10px', border: '1px solid #ddd' }}>
-                        <span style={{
-                          padding: '3px 8px',
-                          borderRadius: '4px',
-                          backgroundColor: booking.status === 'confirmed' ? '#d4edda' : 
-                                         booking.status === 'cancelled' ? '#f8d7da' : '#fff3cd',
-                          color: booking.status === 'confirmed' ? '#155724' : 
-                                 booking.status === 'cancelled' ? '#721c24' : '#856404'
-                        }}>
-                          {booking.status === 'pending' ? 'Ожидание' :
-                           booking.status === 'confirmed' ? 'Подтверждено' :
-                           booking.status === 'cancelled' ? 'Отменено' : booking.status}
-                        </span>
-                      </td>
-                      <td style={{ padding: '10px', border: '1px solid #ddd' }}>
-                        <button 
-                          onClick={() => handleUpdateStatusLocal(booking.id, 'confirmed')}
-                          style={{ marginRight: '5px', backgroundColor: '#28a745', color: 'white', border: 'none', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer' }}
-                        >
-                          ✅ Подтв.
-                        </button>
-                        <button 
-                          onClick={() => handleUpdateStatusLocal(booking.id, 'cancelled')}
-                          style={{ marginRight: '5px', backgroundColor: '#dc3545', color: 'white', border: 'none', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer' }}
-                        >
-                          ❌ Отм.
-                        </button>
-                        <button 
-                          onClick={() => handleDeleteBookingLocal(booking.id)}
-                          style={{ backgroundColor: '#6c757d', color: 'white', border: 'none', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer' }}
-                        >
-                          🗑️ Удалить
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      );
+      return renderBookingsTab();
     }
 
     return <div>Страница не найдена</div>;
