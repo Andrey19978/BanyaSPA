@@ -36,6 +36,8 @@ type CardWithButton = Card & {
   buttonText: string;
 };
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
 function App() {
   const [login, setLogin] = useState<string>(() => localStorage.getItem("login") || "");
 
@@ -132,7 +134,6 @@ function App() {
     setCards(updatedCards);
   }
 
-  // Удаляем неиспользуемый setPriceValue
   const [priceValue] = useState<number>(5000);
 
   const [reviews, setReviews] = useState<Review[]>([
@@ -160,11 +161,77 @@ function App() {
     setReviews(updatedReviews);
   }
 
-  // Для Main добавляем buttonText
   const cardsForMain: CardWithButton[] = cards.map(card => ({
     ...card,
     buttonText: 'Забронировать'
   }));
+
+  const [bookings, setBookings] = useState<any[]>([]);
+
+  const handleDeleteBooking = async (id: number) => {
+    try {
+      const response = await fetch(`${API_URL}/api/bookings/${id}`, {
+        method: 'DELETE'
+      });
+      const data = await response.json();
+      if (data.success) {
+        setBookings(prev => prev.filter(b => b.id !== id));
+        alert('Бронирование удалено!');
+      } else {
+        alert('Ошибка удаления');
+      }
+    } catch (error) {
+      console.error('Ошибка удаления:', error);
+      alert('Ошибка удаления');
+    }
+  };
+
+  const handleUpdateBookingStatus = async (id: number, status: string) => {
+    try {
+      const response = await fetch(`${API_URL}/api/bookings/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status })
+      });
+      const data = await response.json();
+      if (data.success) {
+        setBookings(prev => prev.map(b => b.id === id ? { ...b, status } : b));
+        alert(`Статус обновлен на "${status}"`);
+      } else {
+        alert('Ошибка обновления');
+      }
+    } catch (error) {
+      console.error('Ошибка обновления:', error);
+      alert('Ошибка обновления');
+    }
+  };
+
+  const handleAddBookingByAdmin = async (bookingData: any) => {
+    try {
+      const response = await fetch(`${API_URL}/api/bookings`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(bookingData)
+      });
+      const data = await response.json();
+      if (data.success) {
+        setBookings(prev => [...prev, data.booking]);
+        alert('Бронирование добавлено!');
+        return true;
+      } else {
+        alert('Ошибка добавления: ' + (data.error || ''));
+        return false;
+      }
+    } catch (error) {
+      console.error('Ошибка добавления:', error);
+      alert('Ошибка добавления');
+      return false;
+    }
+  };
 
   return (
     <div className="app">
@@ -178,7 +245,7 @@ function App() {
         <Link to="/adminPanelUse">Админ</Link>
       </Header>
       <Routes>
-        <Route path="/" element={<Main photos={galleryPhotos} cards={cardsForMain} priceValue={priceValue} />} />
+        <Route path="/" element={<Main photos={galleryPhotos} cards={cardsForMain} priceValue={priceValue} userEmail={login} />} />
         <Route path="/profile" element={<Profile user={user} />} />
         <Route
           path="/adminPanelUse"
@@ -197,6 +264,10 @@ function App() {
               onAddReview={addReview}
               onDeleteReview={deleteReview}
               onUpdateReview={updateReview}
+              bookings={bookings}
+              onDeleteBooking={handleDeleteBooking}
+              onUpdateBookingStatus={handleUpdateBookingStatus}
+              onAddBookingByAdmin={handleAddBookingByAdmin}
             />
           }
         />

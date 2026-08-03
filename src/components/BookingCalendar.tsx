@@ -19,9 +19,18 @@ type Card = {
 type BookingCalendarProps = {
   priceValue: number;
   card: Card | null;
+  userEmail?: string;
+  onBookingSuccess?: () => void;
 };
 
-export default function BookingCalendar({ priceValue, card }: BookingCalendarProps) {
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
+export default function BookingCalendar({ 
+  priceValue, 
+  card, 
+  userEmail,
+  onBookingSuccess 
+}: BookingCalendarProps) {
   const PRICE_PER_DAY = priceValue;
   
   const getDailyPrice = (date: Dayjs): number => {
@@ -32,17 +41,40 @@ export default function BookingCalendar({ priceValue, card }: BookingCalendarPro
     return PRICE_PER_DAY;
   };
 
-  const BOOKED_DATES: string[] = ['2026-07-20', '2026-07-21', '2026-07-25'];
-
   const [startDate, setStartDate] = React.useState<Dayjs | null>(null);
   const [endDate, setEndDate] = React.useState<Dayjs | null>(null);
   const [isSelectingStart, setIsSelectingStart] = React.useState<boolean>(true);
   const [selectedHours, setSelectedHours] = React.useState<number>(3);
+  const [isBooking, setIsBooking] = React.useState<boolean>(false);
+  const [bookingMessage, setBookingMessage] = React.useState<string>('');
+  const [bookedDates, setBookedDates] = React.useState<string[]>([]);
 
   const isHourly: boolean = card?.priceType === 'hour';
 
+  React.useEffect(() => {
+    const fetchBookings = async () => {
+      try {
+        const response = await fetch(`${API_URL}/api/bookings`);
+        const data = await response.json();
+        if (data.success && data.bookings) {
+          const dates = data.bookings.map((b: any) => b.booking_date);
+          setBookedDates(dates);
+        }
+      } catch (error) {
+        console.error('Ошибка загрузки бронирований:', error);
+      }
+    };
+    fetchBookings();
+  }, []);
+
   const handleDateChange = (newDate: Dayjs | null): void => {
     if (!newDate?.isValid) return;
+    
+    const dateString = newDate.format('YYYY-MM-DD');
+    if (bookedDates.includes(dateString)) {
+      alert('Эта дата уже забронирована!');
+      return;
+    }
     
     if (isHourly) {
       setStartDate(newDate);
@@ -100,7 +132,7 @@ export default function BookingCalendar({ priceValue, card }: BookingCalendarPro
   const getDayClassName = (date: Dayjs): string => {
     const rangeStatus = isStartOrEnd(date);
     const inRange = isInRange(date);
-    const isBooked = BOOKED_DATES.includes(date.format('YYYY-MM-DD'));
+    const isBooked = bookedDates.includes(date.format('YYYY-MM-DD'));
     const isWeekend = date.day() === 0 || date.day() === 6;
 
     let className = 'dayDefault';
@@ -133,11 +165,112 @@ export default function BookingCalendar({ priceValue, card }: BookingCalendarPro
     setSelectedHours(Number(e.target.value));
   };
 
+  const handleBooking = async () => {
+    if (!userEmail) {
+      alert('Пожалуйста, войдите в систему для бронирования');
+      return;
+    }
+
+    if (!startDate) {
+      alert('Выберите дату бронирования');
+      return;
+    }
+
+    setIsBooking(true);
+    setBookingMessage('');
+
+    try {
+      if (!isHourly && endDate) {
+        let currentDate = startDate;
+        let allBookings = [];
+        let totalPriceTemp = 0;
+        
+        while (currentDate.isBefore(endDate)) {
+          const dateStr = currentDate.format('YYYY-MM-DD');
+          const dayPrice = getDailyPrice(currentDate);
+          totalPriceTemp += dayPrice;
+          
+          allBookings.push({
+            user_email: userEmail,
+            booking_date: dateStr,
+            hours: null,
+            total_price: dayPrice
+          });
+          
+          currentDate = currentDate.add(1, 'day');
+        }
+
+        for (const booking of allBookings) {
+          const response = await fetch(`${API_URL}/api/bookings`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(booking),
+          });
+
+          const data = await response.json();
+          if (!response.ok) {
+            throw new Error(data.error || 'Ошибка бронирования');
+          }
+        }
+
+        setBookingMessage(`✅ Бронирование на ${allBookings.length} дней успешно создано! Стоимость: ${totalPriceTemp}₽`);
+        const newBookedDates = [...bookedDates, ...allBookings.map(b => b.booking_date)];
+        setBookedDates(newBookedDates);
+        
+      } else {
+        const bookingDate = startDate.format('YYYY-MM-DD');
+        const bookingData = {
+          user_email: userEmail,
+          booking_date: bookingDate,
+          hours: selectedHours,
+          total_price: totalPrice
+        };
+
+        const response = await fetch(`${API_URL}/api/bookings`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(bookingData),
+        });
+
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.error || 'Ошибка бронирования');
+        }
+
+        setBookingMessage(`✅ Бронирование успешно создано! Стоимость: ${totalPrice}₽`);
+        setBookedDates([...bookedDates, bookingDate]);
+      }
+
+      if (onBookingSuccess) {
+        onBookingSuccess();
+      }
+
+      setStartDate(null);
+      setEndDate(null);
+      setIsSelectingStart(true);
+
+    } catch (error: any) {
+      console.error('Ошибка бронирования:', error);
+      setBookingMessage(`❌ ${error.message || 'Произошла ошибка при бронировании'}`);
+    } finally {
+      setIsBooking(false);
+    }
+  };
+
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale='ru'>
       <div className="container">
         <div className="bookingInfo">
           <h3>Бронирование бассейна</h3>
+          {!userEmail && (
+            <p style={{ color: 'red', fontWeight: 'bold' }}>
+              ⚠️ Для бронирования необходимо войти в систему
+            </p>
+          )}
           <p><strong>Тип тарифа:</strong> {isHourly ? 'Почасовой' : 'Посуточный'}</p>
           {isHourly && (
             <>
@@ -191,6 +324,35 @@ export default function BookingCalendar({ priceValue, card }: BookingCalendarPro
               💡 В выходные дни цена выше
             </p>
           )}
+          
+          {bookingMessage && (
+            <div style={{ 
+              margin: '10px 0', 
+              padding: '10px', 
+              backgroundColor: bookingMessage.includes('✅') ? '#d4edda' : '#f8d7da',
+              borderRadius: '4px',
+              color: bookingMessage.includes('✅') ? '#155724' : '#721c24'
+            }}>
+              {bookingMessage}
+            </div>
+          )}
+          
+          <button 
+            onClick={handleBooking}
+            disabled={!userEmail || !startDate || isBooking}
+            style={{
+              padding: '10px 20px',
+              backgroundColor: '#007bff',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              opacity: (!userEmail || !startDate || isBooking) ? 0.6 : 1,
+              marginTop: '10px'
+            }}
+          >
+            {isBooking ? 'Бронирование...' : 'Забронировать'}
+          </button>
         </div>
 
         <DateCalendar 
@@ -199,7 +361,7 @@ export default function BookingCalendar({ priceValue, card }: BookingCalendarPro
           disablePast
           shouldDisableDate={(date: Dayjs): boolean => {
             const dateString = date.format('YYYY-MM-DD');
-            return BOOKED_DATES.includes(dateString);
+            return bookedDates.includes(dateString);
           }}
           slotProps={{
             day: (ownerState: { day: Dayjs }) => {

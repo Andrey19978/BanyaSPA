@@ -2,7 +2,6 @@ import './Main.css';
 import { useState } from 'react';
 import BookingCalendar from "./BookingCalendar.tsx"
 
-// Добавляем типы для пропсов
 type Photo = {
   id: number;
   src: string;
@@ -23,9 +22,10 @@ type MainProps = {
   photos: Photo[];
   cards: Card[];
   priceValue: number;
+  userEmail?: string;
 };
 
-function Main({ photos, cards, priceValue }: MainProps) {
+function Main({ photos, cards, priceValue, userEmail }: MainProps) {
   const [bookingModel, setbookingModel] = useState(false);
   const [selectedCard, setSelectedCard] = useState<Card | null>(null);
 
@@ -96,6 +96,7 @@ function Main({ photos, cards, priceValue }: MainProps) {
             <BookingCalendar 
               priceValue={getCalendarPrice()} 
               card={selectedCard}
+              userEmail={userEmail}
             />
             <button onClick={closeBookingModel}>Закрыть</button>
           </div>
