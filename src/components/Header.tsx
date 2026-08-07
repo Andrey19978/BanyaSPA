@@ -1,16 +1,21 @@
 import './Header.css';
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 
 function Header({ 
   children,
   login,
   onLogin,
-  onLogout
+  onLogout,
+  isAdmin,
+  onAdminCheck
 }: { 
   children: React.ReactNode;
   login: string;
   onLogin: (username: string) => void;
   onLogout: () => void;
+  isAdmin: boolean;
+  onAdminCheck: (email: string) => Promise<void>;
 }) {
 
   // Только для модалок
@@ -69,6 +74,8 @@ function Header({
 
       if (response.ok) {
         onLogin(localLogin);
+        // Проверяем права админа после входа
+        await onAdminCheck(localLogin);
         closeModal();
       } else {
         setError(data.error || "Ошибка входа");
@@ -103,6 +110,8 @@ function Header({
       if (response.ok) {
         alert(data.message || "Регистрация успешна!");
         onLogin(localLogin);
+        // Проверяем права админа после регистрации
+        await onAdminCheck(localLogin);
         closeRegistr();
       } else {
         setError(data.error || "Ошибка регистрации");
@@ -127,6 +136,12 @@ function Header({
         <div className="logo">🏊 БаняSPA</div>
         <nav className="nav">
           {children}
+          {/* Показываем ссылку на админку ТОЛЬКО для админов */}
+          {login && isAdmin && (
+            <Link to="/adminPanelUse" style={{ color: '#ffd700', fontWeight: 'bold' }}>
+              ⚙️ Админ
+            </Link>
+          )}
         </nav>
         <button onClick={handleAuthClick} className="login-btn">
           {login ? "Выйти" : "Войти"}

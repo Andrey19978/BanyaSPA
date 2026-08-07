@@ -2,10 +2,10 @@ import Header from './components/Header';
 import Main from './components/Main';
 import Footer from './components/Footer';
 import './App.css';
-import { Routes, Route, Link } from 'react-router-dom';
+import { Routes, Route, Link, Navigate } from 'react-router-dom';
 import Profile from './components/UserProfile';
 import AdminPanelUse from './components/AdminPanel';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import heroImage from './assets/photo_5240452124167049405_y.jpg';
 import heroImage2 from './assets/photo_5240452124167049423_y.jpg';
 import heroImage3 from './assets/photo_5240452124167049424_y.jpg';
@@ -40,15 +40,57 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 function App() {
   const [login, setLogin] = useState<string>(() => localStorage.getItem("login") || "");
+  const [isAdmin, setIsAdmin] = useState<boolean>(() => {
+    const stored = localStorage.getItem("isAdmin");
+    return stored ? JSON.parse(stored) : false;
+  });
 
-  const handleLogin = (username: string) => {
+  // Проверка прав администратора
+  const checkAdminStatus = async (email: string) => {
+    if (!email) {
+      setIsAdmin(false);
+      localStorage.removeItem("isAdmin");
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API_URL}/api/users/check-admin/${email}`);
+      const data = await response.json();
+      
+      if (data.success) {
+        const adminStatus = data.isAdmin || false;
+        setIsAdmin(adminStatus);
+        localStorage.setItem("isAdmin", JSON.stringify(adminStatus));
+      } else {
+        setIsAdmin(false);
+        localStorage.removeItem("isAdmin");
+      }
+    } catch (error) {
+      console.error('Ошибка проверки прав:', error);
+      setIsAdmin(false);
+      localStorage.removeItem("isAdmin");
+    }
+  };
+
+  // Проверяем права при загрузке, если пользователь уже авторизован
+  useEffect(() => {
+    if (login) {
+      checkAdminStatus(login);
+    }
+  }, []);
+
+  const handleLogin = async (username: string) => {
     setLogin(username);
     localStorage.setItem("login", username);
+    // Проверяем права админа
+    await checkAdminStatus(username);
   };
 
   const handleLogout = () => {
     localStorage.removeItem("login");
+    localStorage.removeItem("isAdmin");
     setLogin("");
+    setIsAdmin(false);
   };
 
   const user = { name: login };
@@ -233,16 +275,55 @@ function App() {
     }
   };
 
+  // Компонент для защиты админ-маршрута
+  const ProtectedAdminRoute = ({ children }: { children: React.ReactNode }) => {
+    if (!login) {
+      return <Navigate to="/" replace />;
+    }
+    
+    if (!isAdmin) {
+      return (
+        <div style={{ 
+          padding: '50px', 
+          textAlign: 'center',
+          minHeight: '60vh',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          alignItems: 'center'
+        }}>
+          <h2 style={{ color: '#e74c3c' }}>⛔ Доступ запрещен</h2>
+          <p style={{ fontSize: '18px', margin: '20px 0' }}>
+            У вас нет прав администратора для просмотра этой страницы
+          </p>
+          <Link to="/" style={{ 
+            padding: '10px 20px',
+            backgroundColor: '#3498db',
+            color: 'white',
+            textDecoration: 'none',
+            borderRadius: '5px'
+          }}>
+            Вернуться на главную
+          </Link>
+        </div>
+      );
+    }
+    
+    return <>{children}</>;
+  };
+
   return (
     <div className="app">
       <Header
         login={login}
         onLogin={handleLogin}
         onLogout={handleLogout}
+        isAdmin={isAdmin}
+        onAdminCheck={checkAdminStatus}
       >
         <Link to="/">Главная</Link>
         <Link to="/profile">Профиль</Link>
-        <Link to="/adminPanelUse">Админ</Link>
+        {/* Ссылка на админку теперь отображается только для админов через Header */}
       </Header>
       <Routes>
         <Route path="/" element={<Main photos={galleryPhotos} cards={cardsForMain} priceValue={priceValue} userEmail={login} />} />
@@ -250,25 +331,27 @@ function App() {
         <Route
           path="/adminPanelUse"
           element={
-            <AdminPanelUse
-              user={user}
-              photos={galleryPhotos}
-              onAddPhoto={addPhoto}
-              onDeletePhoto={deletePhoto}
-              onUpdatePhoto={updatePhoto}
-              cards={cards}
-              onAddCard={addCard}
-              onDeleteCard={deleteCard}
-              onUpdateCard={updateCard}
-              reviews={reviews}
-              onAddReview={addReview}
-              onDeleteReview={deleteReview}
-              onUpdateReview={updateReview}
-              bookings={bookings}
-              onDeleteBooking={handleDeleteBooking}
-              onUpdateBookingStatus={handleUpdateBookingStatus}
-              onAddBookingByAdmin={handleAddBookingByAdmin}
-            />
+            <ProtectedAdminRoute>
+              <AdminPanelUse
+                user={user}
+                photos={galleryPhotos}
+                onAddPhoto={addPhoto}
+                onDeletePhoto={deletePhoto}
+                onUpdatePhoto={updatePhoto}
+                cards={cards}
+                onAddCard={addCard}
+                onDeleteCard={deleteCard}
+                onUpdateCard={updateCard}
+                reviews={reviews}
+                onAddReview={addReview}
+                onDeleteReview={deleteReview}
+                onUpdateReview={updateReview}
+                bookings={bookings}
+                onDeleteBooking={handleDeleteBooking}
+                onUpdateBookingStatus={handleUpdateBookingStatus}
+                onAddBookingByAdmin={handleAddBookingByAdmin}
+              />
+            </ProtectedAdminRoute>
           }
         />
       </Routes>
