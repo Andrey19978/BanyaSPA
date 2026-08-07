@@ -142,29 +142,6 @@ function App() {
     loadAllData();
   }, []);
 
-  // АВТОМАТИЧЕСКОЕ ОБНОВЛЕНИЕ КАЖДЫЕ 10 СЕКУНД
-  useEffect(() => {
-    const interval = setInterval(() => {
-      loadAllData();
-      console.log('🔄 Данные автоматически обновлены');
-    }, 10000);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  // ОБНОВЛЕНИЕ ПРИ ВОЗВРАЩЕНИИ НА ВКЛАДКУ
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (!document.hidden) {
-        loadAllData();
-        console.log('🔄 Данные обновлены при возвращении на вкладку');
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, []);
-
   // Проверяем права при загрузке, если пользователь уже авторизован
   useEffect(() => {
     if (login) {
@@ -197,7 +174,7 @@ function App() {
       });
       const data = await response.json();
       if (data.success) {
-        await loadAllData();
+        setGalleryPhotos(prev => [...prev, data.photo]);
         alert('Фото добавлено!');
       } else {
         alert('Ошибка добавления фото');
@@ -215,7 +192,7 @@ function App() {
       });
       const data = await response.json();
       if (data.success) {
-        await loadAllData();
+        setGalleryPhotos(prev => prev.filter(photo => photo.id !== id));
         alert('Фото удалено!');
       } else {
         alert('Ошибка удаления фото');
@@ -235,7 +212,9 @@ function App() {
       });
       const data = await response.json();
       if (data.success) {
-        await loadAllData();
+        setGalleryPhotos(prev => prev.map(photo =>
+          photo.id === id ? { ...photo, src: newSrc, alt: newAlt } : photo
+        ));
         alert('Фото обновлено!');
       } else {
         alert('Ошибка обновления фото');
@@ -256,7 +235,7 @@ function App() {
       });
       const data = await response.json();
       if (data.success) {
-        await loadAllData();
+        setCards(prev => [...prev, data.card]);
         alert('Карточка добавлена!');
       } else {
         alert('Ошибка добавления карточки');
@@ -274,7 +253,7 @@ function App() {
       });
       const data = await response.json();
       if (data.success) {
-        await loadAllData();
+        setCards(prev => prev.filter(card => card.id !== id));
         alert('Карточка удалена!');
       } else {
         alert('Ошибка удаления карточки');
@@ -307,7 +286,9 @@ function App() {
       });
       const data = await response.json();
       if (data.success) {
-        await loadAllData();
+        setCards(prev => prev.map(card =>
+          card.id === id ? { ...card, title: newTitle, description: newDescription, price: newPrice, priceType: newPriceType, minHours: newMinHours } : card
+        ));
         alert('Карточка обновлена!');
       } else {
         alert('Ошибка обновления карточки');
@@ -328,7 +309,7 @@ function App() {
       });
       const data = await response.json();
       if (data.success) {
-        await loadAllData();
+        setReviews(prev => [...prev, data.review]);
         alert('Отзыв добавлен!');
       } else {
         alert('Ошибка добавления отзыва');
@@ -346,7 +327,7 @@ function App() {
       });
       const data = await response.json();
       if (data.success) {
-        await loadAllData();
+        setReviews(prev => prev.filter(review => review.id !== id));
         alert('Отзыв удален!');
       } else {
         alert('Ошибка удаления отзыва');
@@ -366,7 +347,9 @@ function App() {
       });
       const data = await response.json();
       if (data.success) {
-        await loadAllData();
+        setReviews(prev => prev.map(review =>
+          review.id === id ? { ...review, name: newName, text: newText, rating: newRating } : review
+        ));
         alert('Отзыв обновлен!');
       } else {
         alert('Ошибка обновления отзыва');
@@ -385,7 +368,7 @@ function App() {
       });
       const data = await response.json();
       if (data.success) {
-        await loadAllData();
+        setBookings(prev => prev.filter(b => b.id !== id));
         alert('Бронирование удалено!');
       } else {
         alert('Ошибка удаления');
@@ -405,7 +388,7 @@ function App() {
       });
       const data = await response.json();
       if (data.success) {
-        await loadAllData();
+        setBookings(prev => prev.map(b => b.id === id ? { ...b, status } : b));
         alert(`Статус обновлен на "${status}"`);
       } else {
         alert('Ошибка обновления');
@@ -425,7 +408,7 @@ function App() {
       });
       const data = await response.json();
       if (data.success) {
-        await loadAllData();
+        setBookings(prev => [...prev, data.booking]);
         alert('Бронирование добавлено!');
         return true;
       } else {

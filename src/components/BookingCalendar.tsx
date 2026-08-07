@@ -52,6 +52,7 @@ export default function BookingCalendar({
 
   const isHourly: boolean = card?.priceType === 'hour';
 
+  // Загрузка бронирований
   const fetchBookings = React.useCallback(async () => {
     setIsLoading(true);
     try {
