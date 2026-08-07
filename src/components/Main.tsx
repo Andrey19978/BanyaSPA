@@ -50,15 +50,21 @@ function Main({ photos, cards, priceValue, userEmail }: MainProps) {
         <section className="gallery-section">
           <h2 className="section-title">Фотогалерея</h2>
           <div className="gallery-scroll">
-            {photos.map((photo: Photo) => (
-              <div key={photo.id} className="gallery-item">
-                <img
-                  src={photo.src}
-                  alt={photo.alt}
-                  style={{ width: '300px', height: '200px', objectFit: 'cover' }}
-                />
-              </div>
-            ))}
+            {photos.length === 0 ? (
+              <p style={{ textAlign: 'center', color: '#666', padding: '20px' }}>
+                Нет добавленных фото
+              </p>
+            ) : (
+              photos.map((photo: Photo) => (
+                <div key={photo.id} className="gallery-item">
+                  <img
+                    src={photo.src}
+                    alt={photo.alt}
+                    style={{ width: '300px', height: '200px', objectFit: 'cover' }}
+                  />
+                </div>
+              ))
+            )}
           </div>
         </section>
 
@@ -74,23 +80,29 @@ function Main({ photos, cards, priceValue, userEmail }: MainProps) {
         <section className="services-section">
           <h2 className="section-title">Наши услуги</h2>
           <div className="cards-grid">
-            {cards.map((card: Card) => (
-              <div key={card.id} className="card">
-                <h3>{card.title}</h3>
-                <p>{card.description}</p>
-                <p style={{ fontWeight: 'bold', color: '#2c3e50' }}>
-                  {card.price}₽ {card.priceType === 'hour' ? `/час (мин. ${card.minHours}ч)` : '/сутки'}
-                </p>
-                <button onClick={() => openBookingModel(card)} className="book-btn">
-                  {card.buttonText}
-                </button>
-              </div>
-            ))}
+            {cards.length === 0 ? (
+              <p style={{ textAlign: 'center', color: '#666', padding: '20px', width: '100%' }}>
+                Нет добавленных услуг
+              </p>
+            ) : (
+              cards.map((card: Card) => (
+                <div key={card.id} className="card">
+                  <h3>{card.title}</h3>
+                  <p>{card.description}</p>
+                  <p style={{ fontWeight: 'bold', color: '#2c3e50' }}>
+                    {card.price}₽ {card.priceType === 'hour' ? `/час (мин. ${card.minHours}ч)` : '/сутки'}
+                  </p>
+                  <button onClick={() => openBookingModel(card)} className="book-btn">
+                    {card.buttonText}
+                  </button>
+                </div>
+              ))
+            )}
           </div>
         </section>
       </div>
 
-      {bookingModel && (
+      {bookingModel && selectedCard && (
         <div className='bookingModel'>
           <div className='booking-content'>
             <BookingCalendar 
@@ -98,7 +110,9 @@ function Main({ photos, cards, priceValue, userEmail }: MainProps) {
               card={selectedCard}
               userEmail={userEmail}
             />
-            <button onClick={closeBookingModel}>Закрыть</button>
+            <button onClick={closeBookingModel} className="close-booking-btn">
+              Закрыть
+            </button>
           </div>
         </div>
       )}

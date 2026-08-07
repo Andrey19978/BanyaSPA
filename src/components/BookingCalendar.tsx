@@ -48,31 +48,37 @@ export default function BookingCalendar({
   const [isBooking, setIsBooking] = React.useState<boolean>(false);
   const [bookingMessage, setBookingMessage] = React.useState<string>('');
   const [bookedDates, setBookedDates] = React.useState<string[]>([]);
+  const [isLoading, setIsLoading] = React.useState<boolean>(true);
 
   const isHourly: boolean = card?.priceType === 'hour';
 
-  React.useEffect(() => {
-    const fetchBookings = async () => {
-      try {
-        const response = await fetch(`${API_URL}/api/bookings`);
-        const data = await response.json();
-        if (data.success && data.bookings) {
-          const dates = data.bookings.map((b: any) => b.booking_date);
-          setBookedDates(dates);
-        }
-      } catch (error) {
-        console.error('Ошибка загрузки бронирований:', error);
+  // Загрузка бронирований
+  const fetchBookings = React.useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch(`${API_URL}/api/bookings`);
+      const data = await response.json();
+      if (data.success && data.bookings) {
+        const dates = data.bookings.map((b: any) => b.booking_date);
+        setBookedDates(dates);
       }
-    };
-    fetchBookings();
+    } catch (error) {
+      console.error('Ошибка загрузки бронирований:', error);
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
+
+  React.useEffect(() => {
+    fetchBookings();
+  }, [fetchBookings]);
 
   const handleDateChange = (newDate: Dayjs | null): void => {
     if (!newDate?.isValid) return;
     
     const dateString = newDate.format('YYYY-MM-DD');
     if (bookedDates.includes(dateString)) {
-      alert('Эта дата уже забронирована!');
+      alert('❌ Эта дата уже забронирована!');
       return;
     }
     
@@ -167,12 +173,12 @@ export default function BookingCalendar({
 
   const handleBooking = async () => {
     if (!userEmail) {
-      alert('Пожалуйста, войдите в систему для бронирования');
+      alert('⚠️ Пожалуйста, войдите в систему для бронирования');
       return;
     }
 
     if (!startDate) {
-      alert('Выберите дату бронирования');
+      alert('⚠️ Выберите дату бронирования');
       return;
     }
 
@@ -216,8 +222,7 @@ export default function BookingCalendar({
         }
 
         setBookingMessage(`✅ Бронирование на ${allBookings.length} дней успешно создано! Стоимость: ${totalPriceTemp}₽`);
-        const newBookedDates = [...bookedDates, ...allBookings.map(b => b.booking_date)];
-        setBookedDates(newBookedDates);
+        await fetchBookings();
         
       } else {
         const bookingDate = startDate.format('YYYY-MM-DD');
@@ -242,7 +247,7 @@ export default function BookingCalendar({
         }
 
         setBookingMessage(`✅ Бронирование успешно создано! Стоимость: ${totalPrice}₽`);
-        setBookedDates([...bookedDates, bookingDate]);
+        await fetchBookings();
       }
 
       if (onBookingSuccess) {
@@ -260,6 +265,14 @@ export default function BookingCalendar({
       setIsBooking(false);
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="container" style={{ padding: '20px', textAlign: 'center' }}>
+        <p>Загрузка доступных дат...</p>
+      </div>
+    );
+  }
 
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale='ru'>

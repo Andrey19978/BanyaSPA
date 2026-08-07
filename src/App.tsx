@@ -6,9 +6,6 @@ import { Routes, Route, Link, Navigate } from 'react-router-dom';
 import Profile from './components/UserProfile';
 import AdminPanelUse from './components/AdminPanel';
 import { useState, useEffect } from 'react';
-import heroImage from './assets/photo_5240452124167049405_y.jpg';
-import heroImage2 from './assets/photo_5240452124167049423_y.jpg';
-import heroImage3 from './assets/photo_5240452124167049424_y.jpg';
 
 type Review = {
   id: number;
@@ -44,6 +41,7 @@ function App() {
     const stored = localStorage.getItem("isAdmin");
     return stored ? JSON.parse(stored) : false;
   });
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
   // Проверка прав администратора
   const checkAdminStatus = async (email: string) => {
@@ -72,6 +70,78 @@ function App() {
     }
   };
 
+  // --- СОСТОЯНИЯ ---
+  const [galleryPhotos, setGalleryPhotos] = useState<Photo[]>([]);
+  const [cards, setCards] = useState<Card[]>([]);
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [bookings, setBookings] = useState<any[]>([]);
+  const [priceValue] = useState<number>(5000);
+
+  // --- ЗАГРУЗКА ДАННЫХ С СЕРВЕРА ---
+  const loadPhotos = async () => {
+    try {
+      const response = await fetch(`${API_URL}/api/photos`);
+      const data = await response.json();
+      if (data.success) {
+        setGalleryPhotos(data.photos);
+      }
+    } catch (error) {
+      console.error('Ошибка загрузки фото:', error);
+    }
+  };
+
+  const loadCards = async () => {
+    try {
+      const response = await fetch(`${API_URL}/api/cards`);
+      const data = await response.json();
+      if (data.success) {
+        setCards(data.cards);
+      }
+    } catch (error) {
+      console.error('Ошибка загрузки карточек:', error);
+    }
+  };
+
+  const loadReviews = async () => {
+    try {
+      const response = await fetch(`${API_URL}/api/reviews`);
+      const data = await response.json();
+      if (data.success) {
+        setReviews(data.reviews);
+      }
+    } catch (error) {
+      console.error('Ошибка загрузки отзывов:', error);
+    }
+  };
+
+  const loadBookings = async () => {
+    try {
+      const response = await fetch(`${API_URL}/api/bookings`);
+      const data = await response.json();
+      if (data.success) {
+        setBookings(data.bookings);
+      }
+    } catch (error) {
+      console.error('Ошибка загрузки бронирований:', error);
+    }
+  };
+
+  const loadAllData = async () => {
+    setIsLoading(true);
+    await Promise.all([
+      loadPhotos(),
+      loadCards(),
+      loadReviews(),
+      loadBookings()
+    ]);
+    setIsLoading(false);
+  };
+
+  // Загружаем данные при старте
+  useEffect(() => {
+    loadAllData();
+  }, []);
+
   // Проверяем права при загрузке, если пользователь уже авторизован
   useEffect(() => {
     if (login) {
@@ -82,7 +152,6 @@ function App() {
   const handleLogin = async (username: string) => {
     setLogin(username);
     localStorage.setItem("login", username);
-    // Проверяем права админа
     await checkAdminStatus(username);
   };
 
@@ -95,121 +164,203 @@ function App() {
 
   const user = { name: login };
 
-  const [galleryPhotos, setGalleryPhotos] = useState<Photo[]>([
-    { id: 1, src: heroImage, alt: 'Интерьер 1' },
-    { id: 2, src: heroImage2, alt: 'Интерьер 2' },
-    { id: 3, src: heroImage3, alt: 'Интерьер 3' },
-  ]);
+  // --- ФУНКЦИИ ДЛЯ ФОТО ---
+  const addPhoto = async (newPhoto: Omit<Photo, 'id'>) => {
+    try {
+      const response = await fetch(`${API_URL}/api/photos`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newPhoto)
+      });
+      const data = await response.json();
+      if (data.success) {
+        setGalleryPhotos(prev => [...prev, data.photo]);
+        alert('Фото добавлено!');
+      } else {
+        alert('Ошибка добавления фото');
+      }
+    } catch (error) {
+      console.error('Ошибка добавления фото:', error);
+      alert('Ошибка добавления фото');
+    }
+  };
 
-  function addPhoto(newPhoto: Omit<Photo, 'id'>) {
-    const updatedPhotos = [...galleryPhotos, { ...newPhoto, id: Date.now() }];
-    setGalleryPhotos(updatedPhotos);
-  }
+  const deletePhoto = async (id: number) => {
+    try {
+      const response = await fetch(`${API_URL}/api/photos/${id}`, {
+        method: 'DELETE'
+      });
+      const data = await response.json();
+      if (data.success) {
+        setGalleryPhotos(prev => prev.filter(photo => photo.id !== id));
+        alert('Фото удалено!');
+      } else {
+        alert('Ошибка удаления фото');
+      }
+    } catch (error) {
+      console.error('Ошибка удаления фото:', error);
+      alert('Ошибка удаления фото');
+    }
+  };
 
-  function deletePhoto(id: number) {
-    const updatedPhotos = galleryPhotos.filter(photo => photo.id !== id);
-    setGalleryPhotos(updatedPhotos);
-  }
+  const updatePhoto = async (id: number, newSrc: string, newAlt: string) => {
+    try {
+      const response = await fetch(`${API_URL}/api/photos/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ src: newSrc, alt: newAlt })
+      });
+      const data = await response.json();
+      if (data.success) {
+        setGalleryPhotos(prev => prev.map(photo =>
+          photo.id === id ? { ...photo, src: newSrc, alt: newAlt } : photo
+        ));
+        alert('Фото обновлено!');
+      } else {
+        alert('Ошибка обновления фото');
+      }
+    } catch (error) {
+      console.error('Ошибка обновления фото:', error);
+      alert('Ошибка обновления фото');
+    }
+  };
 
-  function updatePhoto(id: number, newSrc: string, newAlt: string) {
-    const updatedPhotos = galleryPhotos.map(photo =>
-      photo.id === id ? { ...photo, src: newSrc, alt: newAlt } : photo
-    );
-    setGalleryPhotos(updatedPhotos);
-  }
+  // --- ФУНКЦИИ ДЛЯ КАРТОЧЕК ---
+  const addCard = async (newCard: Omit<Card, 'id'>) => {
+    try {
+      const response = await fetch(`${API_URL}/api/cards`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newCard)
+      });
+      const data = await response.json();
+      if (data.success) {
+        setCards(prev => [...prev, data.card]);
+        alert('Карточка добавлена!');
+      } else {
+        alert('Ошибка добавления карточки');
+      }
+    } catch (error) {
+      console.error('Ошибка добавления карточки:', error);
+      alert('Ошибка добавления карточки');
+    }
+  };
 
-  const [cards, setCards] = useState<Card[]>([
-    {
-      id: 1,
-      title: '👥 До 20 человек',
-      description: 'Просторный зал для большой компании, отличное место для праздников',
-      price: 12000,
-      priceType: 'day'
-    },
-    {
-      id: 2,
-      title: '🎉 От 25 человек',
-      description: 'VIP зал для мероприятий, корпоративов и дней рождения',
-      price: 18000,
-      priceType: 'day'
-    },
-    {
-      id: 3,
-      title: '⏰ До 4 человек почасовая',
-      description: 'Уютный зал для семьи или друзей, оплата за фактическое время',
-      price: 3000,
-      priceType: 'hour',
-      minHours: 3
-    },
-  ]);
+  const deleteCard = async (id: number) => {
+    try {
+      const response = await fetch(`${API_URL}/api/cards/${id}`, {
+        method: 'DELETE'
+      });
+      const data = await response.json();
+      if (data.success) {
+        setCards(prev => prev.filter(card => card.id !== id));
+        alert('Карточка удалена!');
+      } else {
+        alert('Ошибка удаления карточки');
+      }
+    } catch (error) {
+      console.error('Ошибка удаления карточки:', error);
+      alert('Ошибка удаления карточки');
+    }
+  };
 
-  function addCard(newCard: Omit<Card, 'id'>) {
-    const updatedCards = [...cards, { ...newCard, id: Date.now() }];
-    setCards(updatedCards);
-  }
-
-  function deleteCard(id: number) {
-    const updatedCards = cards.filter(card => card.id !== id);
-    setCards(updatedCards);
-  }
-
-  function updateCard(
+  const updateCard = async (
     id: number,
     newTitle: string,
     newDescription: string,
     newPrice: number,
     newPriceType: 'hour' | 'day',
     newMinHours?: number
-  ) {
-    const updatedCards = cards.map(card =>
-      card.id === id
-        ? {
-            ...card,
-            title: newTitle,
-            description: newDescription,
-            price: newPrice,
-            priceType: newPriceType,
-            minHours: newPriceType === 'hour' ? newMinHours : undefined
-          }
-        : card
-    );
-    setCards(updatedCards);
-  }
+  ) => {
+    try {
+      const response = await fetch(`${API_URL}/api/cards/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          title: newTitle, 
+          description: newDescription, 
+          price: newPrice, 
+          priceType: newPriceType, 
+          minHours: newMinHours 
+        })
+      });
+      const data = await response.json();
+      if (data.success) {
+        setCards(prev => prev.map(card =>
+          card.id === id ? { ...card, title: newTitle, description: newDescription, price: newPrice, priceType: newPriceType, minHours: newMinHours } : card
+        ));
+        alert('Карточка обновлена!');
+      } else {
+        alert('Ошибка обновления карточки');
+      }
+    } catch (error) {
+      console.error('Ошибка обновления карточки:', error);
+      alert('Ошибка обновления карточки');
+    }
+  };
 
-  const [priceValue] = useState<number>(5000);
+  // --- ФУНКЦИИ ДЛЯ ОТЗЫВОВ ---
+  const addReview = async (newReview: Omit<Review, 'id'>) => {
+    try {
+      const response = await fetch(`${API_URL}/api/reviews`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...newReview, user_email: login || 'anonymous' })
+      });
+      const data = await response.json();
+      if (data.success) {
+        setReviews(prev => [...prev, data.review]);
+        alert('Отзыв добавлен!');
+      } else {
+        alert('Ошибка добавления отзыва');
+      }
+    } catch (error) {
+      console.error('Ошибка добавления отзыва:', error);
+      alert('Ошибка добавления отзыва');
+    }
+  };
 
-  const [reviews, setReviews] = useState<Review[]>([
-    { id: 1, name: 'Анна', text: 'Отличное место!', rating: 5 },
-    { id: 2, name: 'Иван', text: 'Будем приходить еще!', rating: 5 },
-    { id: 3, name: 'Мария', text: 'Всё супер!', rating: 5 },
-  ]);
+  const deleteReview = async (id: number) => {
+    try {
+      const response = await fetch(`${API_URL}/api/reviews/${id}`, {
+        method: 'DELETE'
+      });
+      const data = await response.json();
+      if (data.success) {
+        setReviews(prev => prev.filter(review => review.id !== id));
+        alert('Отзыв удален!');
+      } else {
+        alert('Ошибка удаления отзыва');
+      }
+    } catch (error) {
+      console.error('Ошибка удаления отзыва:', error);
+      alert('Ошибка удаления отзыва');
+    }
+  };
 
-  function addReview(newReview: Omit<Review, 'id'>) {
-    const updatedReviews = [...reviews, { ...newReview, id: Date.now() }];
-    setReviews(updatedReviews);
-  }
+  const updateReview = async (id: number, newName: string, newText: string, newRating: number) => {
+    try {
+      const response = await fetch(`${API_URL}/api/reviews/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newName, text: newText, rating: newRating })
+      });
+      const data = await response.json();
+      if (data.success) {
+        setReviews(prev => prev.map(review =>
+          review.id === id ? { ...review, name: newName, text: newText, rating: newRating } : review
+        ));
+        alert('Отзыв обновлен!');
+      } else {
+        alert('Ошибка обновления отзыва');
+      }
+    } catch (error) {
+      console.error('Ошибка обновления отзыва:', error);
+      alert('Ошибка обновления отзыва');
+    }
+  };
 
-  function deleteReview(id: number) {
-    const updatedReviews = reviews.filter(review => review.id !== id);
-    setReviews(updatedReviews);
-  }
-
-  function updateReview(id: number, newName: string, newText: string, newRating: number) {
-    const updatedReviews = reviews.map(review =>
-      review.id === id
-        ? { ...review, name: newName, text: newText, rating: newRating }
-        : review
-    );
-    setReviews(updatedReviews);
-  }
-
-  const cardsForMain: CardWithButton[] = cards.map(card => ({
-    ...card,
-    buttonText: 'Забронировать'
-  }));
-
-  const [bookings, setBookings] = useState<any[]>([]);
-
+  // --- ФУНКЦИИ ДЛЯ БРОНИРОВАНИЙ ---
   const handleDeleteBooking = async (id: number) => {
     try {
       const response = await fetch(`${API_URL}/api/bookings/${id}`, {
@@ -232,9 +383,7 @@ function App() {
     try {
       const response = await fetch(`${API_URL}/api/bookings/${id}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status })
       });
       const data = await response.json();
@@ -254,9 +403,7 @@ function App() {
     try {
       const response = await fetch(`${API_URL}/api/bookings`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(bookingData)
       });
       const data = await response.json();
@@ -274,6 +421,11 @@ function App() {
       return false;
     }
   };
+
+  const cardsForMain: CardWithButton[] = cards.map(card => ({
+    ...card,
+    buttonText: 'Забронировать'
+  }));
 
   // Компонент для защиты админ-маршрута
   const ProtectedAdminRoute = ({ children }: { children: React.ReactNode }) => {
@@ -312,6 +464,20 @@ function App() {
     return <>{children}</>;
   };
 
+  if (isLoading) {
+    return (
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: '100vh',
+        fontSize: '20px'
+      }}>
+        Загрузка...
+      </div>
+    );
+  }
+
   return (
     <div className="app">
       <Header
@@ -323,7 +489,6 @@ function App() {
       >
         <Link to="/">Главная</Link>
         <Link to="/profile">Профиль</Link>
-        {/* Ссылка на админку теперь отображается только для админов через Header */}
       </Header>
       <Routes>
         <Route path="/" element={<Main photos={galleryPhotos} cards={cardsForMain} priceValue={priceValue} userEmail={login} />} />

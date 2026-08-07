@@ -30,17 +30,17 @@ type Card = {
 type AdminPanelUseProps = {
   user: User;
   photos: Photo[];
-  onAddPhoto: (newPhoto: Omit<Photo, 'id'>) => void;
-  onDeletePhoto: (id: number) => void;
-  onUpdatePhoto: (id: number, newSrc: string, newAlt: string) => void;
+  onAddPhoto: (newPhoto: Omit<Photo, 'id'>) => Promise<void>;
+  onDeletePhoto: (id: number) => Promise<void>;
+  onUpdatePhoto: (id: number, newSrc: string, newAlt: string) => Promise<void>;
   cards: Card[];
-  onAddCard: (newCard: Omit<Card, 'id'>) => void;
-  onDeleteCard: (id: number) => void;
-  onUpdateCard: (id: number, newTitle: string, newDescription: string, newPrice: number, newPriceType: 'hour' | 'day', newMinHours?: number) => void;
+  onAddCard: (newCard: Omit<Card, 'id'>) => Promise<void>;
+  onDeleteCard: (id: number) => Promise<void>;
+  onUpdateCard: (id: number, newTitle: string, newDescription: string, newPrice: number, newPriceType: 'hour' | 'day', newMinHours?: number) => Promise<void>;
   reviews: Review[];
-  onAddReview: (newReview: Omit<Review, 'id'>) => void;
-  onDeleteReview: (id: number) => void;
-  onUpdateReview: (id: number, newName: string, newText: string, newRating: number) => void;
+  onAddReview: (newReview: Omit<Review, 'id'>) => Promise<void>;
+  onDeleteReview: (id: number) => Promise<void>;
+  onUpdateReview: (id: number, newName: string, newText: string, newRating: number) => Promise<void>;
   bookings: any[];
   onDeleteBooking: (id: number) => Promise<void>;
   onUpdateBookingStatus: (id: number, status: string) => Promise<void>;
@@ -94,6 +94,7 @@ function AdminPanelUse({
   });
   const [localBookings, setLocalBookings] = useState<any[]>(initialBookings);
   const [isLoading, setIsLoading] = useState(true);
+  const [isAdding, setIsAdding] = useState(false);
 
   // Загрузка бронирований при открытии вкладки
   useEffect(() => {
@@ -134,22 +135,27 @@ function AdminPanelUse({
       return;
     }
 
-    const success = await onAddBookingByAdmin({
-      user_email: newBookingData.user_email,
-      booking_date: newBookingData.booking_date,
-      hours: newBookingData.hours ? Number(newBookingData.hours) : null,
-      total_price: Number(newBookingData.total_price)
-    });
-
-    if (success) {
-      setNewBookingData({
-        user_email: '',
-        booking_date: '',
-        hours: '',
-        total_price: ''
+    setIsAdding(true);
+    try {
+      const success = await onAddBookingByAdmin({
+        user_email: newBookingData.user_email,
+        booking_date: newBookingData.booking_date,
+        hours: newBookingData.hours ? Number(newBookingData.hours) : null,
+        total_price: Number(newBookingData.total_price)
       });
-      setShowAddForm(false);
-      await loadBookings();
+
+      if (success) {
+        setNewBookingData({
+          user_email: '',
+          booking_date: '',
+          hours: '',
+          total_price: ''
+        });
+        setShowAddForm(false);
+        await loadBookings();
+      }
+    } finally {
+      setIsAdding(false);
     }
   };
 
@@ -339,7 +345,7 @@ function AdminPanelUse({
         <h2>Управление бронированием</h2>
         
         <div style={{ marginBottom: '20px' }}>
-          <button onClick={() => setShowAddForm(!showAddForm)}>
+          <button onClick={() => setShowAddForm(!showAddForm)} disabled={isAdding}>
             {showAddForm ? 'Скрыть форму' : '➕ Добавить бронирование вручную'}
           </button>
           <button onClick={loadBookings} style={{ marginLeft: '10px' }}>
@@ -356,6 +362,7 @@ function AdminPanelUse({
               value={newBookingData.user_email}
               onChange={(e) => setNewBookingData({...newBookingData, user_email: e.target.value})}
               style={{ display: 'block', marginBottom: '10px', width: '100%', padding: '8px' }}
+              disabled={isAdding}
             />
             <input
               type="date"
@@ -363,6 +370,7 @@ function AdminPanelUse({
               value={newBookingData.booking_date}
               onChange={(e) => setNewBookingData({...newBookingData, booking_date: e.target.value})}
               style={{ display: 'block', marginBottom: '10px', width: '100%', padding: '8px' }}
+              disabled={isAdding}
             />
             <input
               type="number"
@@ -370,6 +378,7 @@ function AdminPanelUse({
               value={newBookingData.hours}
               onChange={(e) => setNewBookingData({...newBookingData, hours: e.target.value})}
               style={{ display: 'block', marginBottom: '10px', width: '100%', padding: '8px' }}
+              disabled={isAdding}
             />
             <input
               type="number"
@@ -377,9 +386,10 @@ function AdminPanelUse({
               value={newBookingData.total_price}
               onChange={(e) => setNewBookingData({...newBookingData, total_price: e.target.value})}
               style={{ display: 'block', marginBottom: '10px', width: '100%', padding: '8px' }}
+              disabled={isAdding}
             />
-            <button onClick={handleAddBookingLocal} style={{ padding: '10px 20px' }}>
-              Добавить
+            <button onClick={handleAddBookingLocal} style={{ padding: '10px 20px' }} disabled={isAdding}>
+              {isAdding ? 'Добавление...' : 'Добавить'}
             </button>
           </div>
         )}
