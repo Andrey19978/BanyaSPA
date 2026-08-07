@@ -74,7 +74,6 @@ function Header({
 
       if (response.ok) {
         onLogin(localLogin);
-        // Проверяем права админа после входа
         await onAdminCheck(localLogin);
         closeModal();
       } else {
@@ -110,7 +109,6 @@ function Header({
       if (response.ok) {
         alert(data.message || "Регистрация успешна!");
         onLogin(localLogin);
-        // Проверяем права админа после регистрации
         await onAdminCheck(localLogin);
         closeRegistr();
       } else {
@@ -136,7 +134,6 @@ function Header({
         <div className="logo">🏊 БаняSPA</div>
         <nav className="nav">
           {children}
-          {/* Показываем ссылку на админку ТОЛЬКО для админов */}
           {login && isAdmin && (
             <Link to="/adminPanelUse" style={{ color: '#ffd700', fontWeight: 'bold' }}>
               ⚙️ Админ
