@@ -57,3 +57,79 @@
   opacity: 0.7;
   font-size: 14px;
 }
+
+/* ===== МЕДИА-ЗАПРОСЫ ДЛЯ FOOTER ===== */
+@media (max-width: 992px) {
+  .footer-content {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 30px;
+  }
+}
+
+@media (max-width: 768px) {
+  .footer {
+    padding: 30px 0 0;
+    margin-top: 30px;
+  }
+
+  .footer-content {
+    grid-template-columns: 1fr;
+    text-align: center;
+    gap: 25px;
+    padding-bottom: 20px;
+  }
+
+  .footer-section h3 {
+    font-size: 18px;
+  }
+
+  .footer-section p {
+    font-size: 14px;
+  }
+
+  .reviews p {
+    max-width: 300px;
+    margin: 5px auto;
+  }
+
+  .review-btn {
+    width: 100%;
+    max-width: 250px;
+  }
+}
+
+@media (max-width: 480px) {
+  .footer {
+    padding: 20px 0 0;
+    margin-top: 20px;
+  }
+
+  .footer-content {
+    gap: 20px;
+    padding-bottom: 15px;
+  }
+
+  .footer-section h3 {
+    font-size: 16px;
+  }
+
+  .footer-section p {
+    font-size: 13px;
+  }
+
+  .reviews p {
+    font-size: 13px;
+    padding: 6px 10px;
+  }
+
+  .review-btn {
+    font-size: 13px;
+    padding: 8px 20px;
+    max-width: 200px;
+  }
+
+  .copyright {
+    font-size: 12px;
+    padding: 15px 0;
+  }
+}

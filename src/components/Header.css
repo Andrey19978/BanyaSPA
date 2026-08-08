@@ -34,8 +34,8 @@
   background: #c73652;
 }
 
-.modal_okno{
-    position: fixed;
+.modal_okno {
+  position: fixed;
   top: 0;
   left: 0;
   right: 0;
@@ -70,23 +70,143 @@
   transition: border-color 0.2s;
 }
 
-.formButtLogin{
+.formButtLogin {
   margin-left: 200px;
 }
 
-.buttCloseModal{
+.buttCloseModal {
   margin-left: 266px;
   margin-bottom: 20px;
 }
 
-.nav{
-  display: flex;      /* или display: inline-flex */
-  gap: 15px;          /* Расстояние между элементами */
+.nav {
+  display: flex;
+  gap: 15px;
   padding: 10px;
 }
 
-.nav a{
-    padding: 8px 12px;
-    text-decoration: none;
-    color: #ddd;
+.nav a {
+  padding: 8px 12px;
+  text-decoration: none;
+  color: #ddd;
+}
+
+/* ===== МЕДИА-ЗАПРОСЫ ДЛЯ HEADER ===== */
+@media (max-width: 992px) {
+  .header-content {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+  }
+
+  .nav {
+    order: 3;
+    width: 100%;
+    justify-content: center;
+    padding: 5px 0;
+  }
+}
+
+@media (max-width: 768px) {
+  .header {
+    padding: 15px 0;
+  }
+
+  .logo {
+    font-size: 22px;
+  }
+
+  .login-btn {
+    padding: 8px 20px;
+    font-size: 14px;
+  }
+
+  .nav {
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .nav a {
+    padding: 5px 10px;
+    font-size: 14px;
+  }
+
+  .modal-content {
+    padding: 30px;
+    max-width: 350px;
+  }
+
+  .formButtLogin {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .buttCloseModal {
+    margin-left: 0;
+    margin-bottom: 15px;
+  }
+}
+
+@media (max-width: 480px) {
+  .header {
+    padding: 10px 0;
+  }
+
+  .header-content {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .logo {
+    font-size: 20px;
+  }
+
+  .login-btn {
+    padding: 6px 16px;
+    font-size: 12px;
+    width: 100%;
+    max-width: 200px;
+  }
+
+  .nav {
+    gap: 5px;
+    padding: 5px 0;
+  }
+
+  .nav a {
+    font-size: 12px;
+    padding: 4px 8px;
+  }
+
+  .modal-content {
+    padding: 20px;
+    max-width: 300px;
+    width: 95%;
+  }
+
+  .modal-content input {
+    padding: 10px;
+    font-size: 14px;
+  }
+}
+
+/* Анимации для модалки */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateY(-30px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }

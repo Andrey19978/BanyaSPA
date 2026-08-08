@@ -3,3 +3,10 @@
   flex-direction: column;
   min-height: 100vh;
 }
+
+/* ===== МЕДИА-ЗАПРОСЫ ДЛЯ APP ===== */
+@media (max-width: 768px) {
+  .app {
+    min-height: 100dvh; /* Для мобильных браузеров */
+  }
+}
